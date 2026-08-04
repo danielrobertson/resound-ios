@@ -6,14 +6,43 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		6590EE8630217B0800E46A17 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6590ED64301C113F00E46A17 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6590ED6B301C113F00E46A17;
+			remoteInfo = "resound-ios";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		6590ED6C301C113F00E46A17 /* resound-ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "resound-ios.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6590ED80301C120000E46A17 /* resound-iosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "resound-iosTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		6590ED8B301C120000E46A17 /* Exceptions for "resound-ios" folder in "resound-ios" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 6590ED6B301C113F00E46A17 /* resound-ios */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		6590ED6E301C113F00E46A17 /* resound-ios */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				6590ED8B301C120000E46A17 /* Exceptions for "resound-ios" folder in "resound-ios" target */,
+			);
 			path = "resound-ios";
+			sourceTree = "<group>";
+		};
+		6590ED81301C120000E46A17 /* resound-iosTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "resound-iosTests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -33,6 +62,7 @@
 			isa = PBXGroup;
 			children = (
 				6590ED6E301C113F00E46A17 /* resound-ios */,
+				6590ED81301C120000E46A17 /* resound-iosTests */,
 				6590ED6D301C113F00E46A17 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +71,7 @@
 			isa = PBXGroup;
 			children = (
 				6590ED6C301C113F00E46A17 /* resound-ios.app */,
+				6590ED80301C120000E46A17 /* resound-iosTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,6 +101,28 @@
 			productReference = 6590ED6C301C113F00E46A17 /* resound-ios.app */;
 			productType = "com.apple.product-type.application";
 		};
+		6590ED85301C120000E46A17 /* resound-iosTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6590EE8B30217B0B00E46A17 /* Build configuration list for PBXNativeTarget "resound-iosTests" */;
+			buildPhases = (
+				6590ED82301C120000E46A17 /* Sources */,
+				6590ED84301C120000E46A17 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6590ED87301C120000E46A17 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				6590ED81301C120000E46A17 /* resound-iosTests */,
+			);
+			name = "resound-iosTests";
+			packageProductDependencies = (
+			);
+			productName = "resound-iosTests";
+			productReference = 6590ED80301C120000E46A17 /* resound-iosTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -82,6 +135,10 @@
 				TargetAttributes = {
 					6590ED6B301C113F00E46A17 = {
 						CreatedOnToolsVersion = 26.6;
+					};
+					6590ED85301C120000E46A17 = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = 6590ED6B301C113F00E46A17;
 					};
 				};
 			};
@@ -100,12 +157,20 @@
 			projectRoot = "";
 			targets = (
 				6590ED6B301C113F00E46A17 /* resound-ios */,
+				6590ED85301C120000E46A17 /* resound-iosTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		6590ED6A301C113F00E46A17 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6590ED84301C120000E46A17 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +187,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6590ED82301C120000E46A17 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6590ED87301C120000E46A17 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6590ED6B301C113F00E46A17 /* resound-ios */;
+			targetProxy = 6590EE8630217B0800E46A17 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		6590ED75301C114000E46A17 /* Debug */ = {
@@ -256,6 +336,7 @@
 				DEVELOPMENT_TEAM = VX686593WM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "resound-ios/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -288,6 +369,7 @@
 				DEVELOPMENT_TEAM = VX686593WM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "resound-ios/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -310,6 +392,50 @@
 			};
 			name = Release;
 		};
+		6590EE8730217B0800E46A17 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VX686593WM;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.danielrobertson.resound-iosTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/resound-ios.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/resound-ios";
+			};
+			name = Debug;
+		};
+		6590EE8830217B0800E46A17 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VX686593WM;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.danielrobertson.resound-iosTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/resound-ios.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/resound-ios";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -327,6 +453,15 @@
 			buildConfigurations = (
 				6590ED78301C114000E46A17 /* Debug */,
 				6590ED79301C114000E46A17 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6590EE8B30217B0B00E46A17 /* Build configuration list for PBXNativeTarget "resound-iosTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6590EE8730217B0800E46A17 /* Debug */,
+				6590EE8830217B0800E46A17 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

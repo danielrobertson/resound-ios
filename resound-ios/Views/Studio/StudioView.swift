@@ -12,6 +12,7 @@ struct StudioView: View {
     @State private var isSettingsPresented = false
     @State private var isFileImporterPresented = false
     @State private var isPhotosPickerPresented = false
+    @State private var selectedTag: String?
 
     var body: some View {
         NavigationStack {
@@ -27,8 +28,12 @@ struct StudioView: View {
                         )
                         .padding(.top, 40)
                     } else {
+                        if !allTags.isEmpty {
+                            tagFilter
+                                .padding(.top, 24)
+                        }
                         recordingList
-                            .padding(.top, 32)
+                            .padding(.top, allTags.isEmpty ? 32 : 20)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -100,11 +105,52 @@ struct StudioView: View {
         }
     }
 
+    // MARK: - Tag filter
+
+    private var allTags: [String] {
+        RecordingStore.allTags(in: recordings)
+    }
+
+    /// Recordings narrowed to the selected tag (case-insensitive); a selected
+    /// tag whose last recording was deleted or untagged shows everything again.
+    private var filteredRecordings: [Recording] {
+        guard let selectedTag else { return recordings }
+        return recordings.filter { recording in
+            recording.tags.contains { $0.caseInsensitiveCompare(selectedTag) == .orderedSame }
+        }
+    }
+
+    private var tagFilter: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(allTags, id: \.self) { tag in
+                    let isSelected = selectedTag?.caseInsensitiveCompare(tag) == .orderedSame
+                    Button {
+                        withAnimation(.settle) {
+                            selectedTag = isSelected ? nil : tag
+                        }
+                    } label: {
+                        Text(tag)
+                            .font(.body(12, .medium, relativeTo: .caption))
+                            .foregroundStyle(
+                                isSelected ? Color.appPrimaryForeground : Color.appForeground.opacity(0.8)
+                            )
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Capsule().fill(isSelected ? Color.appPrimary : Color.appMuted))
+                            .overlay(Capsule().strokeBorder(Color.appBorder.opacity(isSelected ? 0 : 0.7)))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
     // MARK: - List
 
     private var recordingList: some View {
         LazyVStack(spacing: 14) {
-            ForEach(Array(recordings.enumerated()), id: \.element.id) { index, recording in
+            ForEach(Array(filteredRecordings.enumerated()), id: \.element.id) { index, recording in
                 NavigationLink(value: recording) {
                     RecordingCard(recording: recording)
                 }

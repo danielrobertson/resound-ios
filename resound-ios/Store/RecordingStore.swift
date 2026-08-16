@@ -122,6 +122,43 @@ final class RecordingStore {
         try? modelContext.save()
     }
 
+    /// Adds a tag. Whitespace is trimmed; empty and duplicate tags
+    /// (case-insensitive) are ignored.
+    func addTag(_ tag: String, to recording: Recording) {
+        let trimmed = tag.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let exists = recording.tags.contains { $0.caseInsensitiveCompare(trimmed) == .orderedSame }
+        guard !exists else { return }
+        recording.tags.append(trimmed)
+        try? modelContext.save()
+    }
+
+    /// Removes a tag by exact value; a tag that isn't present is a no-op.
+    func removeTag(_ tag: String, from recording: Recording) {
+        recording.tags.removeAll { $0 == tag }
+        try? modelContext.save()
+    }
+
+    /// Replaces the notes text. Unlike titles, notes may be cleared to empty.
+    func setNotes(_ notes: String, for recording: Recording) {
+        recording.notes = notes
+        try? modelContext.save()
+    }
+
+    /// Every distinct tag across `recordings`, first-use order preserved,
+    /// deduplicated case-insensitively.
+    static func allTags(in recordings: [Recording]) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for tag in recordings.flatMap(\.tags) {
+            let key = tag.lowercased()
+            if seen.insert(key).inserted {
+                result.append(tag)
+            }
+        }
+        return result
+    }
+
     /// Deletes the media file (tolerating one that is already missing),
     /// then the row.
     func delete(_ recording: Recording) throws {

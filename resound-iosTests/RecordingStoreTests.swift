@@ -145,6 +145,70 @@ struct RecordingStoreTests {
         #expect(recording.title == "Keep me")
     }
 
+    // MARK: - tags
+
+    @Test func addTagTrimsAndAppends() throws {
+        let (store, _, _) = try makeStore()
+        let source = try makeFixture(named: "tags-\(UUID().uuidString).pdf")
+        defer { try? FileManager.default.removeItem(at: source) }
+        let recording = try store.create(copying: source, kind: .file, title: "T", contentType: .pdf, duration: nil)
+
+        store.addTag("  Scales ", to: recording)
+        store.addTag("Jazz", to: recording)
+
+        #expect(recording.tags == ["Scales", "Jazz"])
+    }
+
+    @Test func addTagIgnoresEmptyAndCaseInsensitiveDuplicates() throws {
+        let (store, _, _) = try makeStore()
+        let source = try makeFixture(named: "tags-dup-\(UUID().uuidString).pdf")
+        defer { try? FileManager.default.removeItem(at: source) }
+        let recording = try store.create(copying: source, kind: .file, title: "T", contentType: .pdf, duration: nil)
+
+        store.addTag("Scales", to: recording)
+        store.addTag("scales", to: recording)
+        store.addTag("   ", to: recording)
+
+        #expect(recording.tags == ["Scales"])
+    }
+
+    @Test func removeTagRemovesExactMatchOnly() throws {
+        let (store, _, _) = try makeStore()
+        let source = try makeFixture(named: "tags-rm-\(UUID().uuidString).pdf")
+        defer { try? FileManager.default.removeItem(at: source) }
+        let recording = try store.create(copying: source, kind: .file, title: "T", contentType: .pdf, duration: nil)
+        store.addTag("Scales", to: recording)
+        store.addTag("Jazz", to: recording)
+
+        store.removeTag("Scales", from: recording)
+        store.removeTag("Not there", from: recording)
+
+        #expect(recording.tags == ["Jazz"])
+    }
+
+    @Test func allTagsDeduplicatesAcrossRecordingsPreservingOrder() {
+        let a = Recording(kind: .audio, title: "A", contentType: "t", size: 1, fileName: "a.m4a", tags: ["Scales", "Jazz"])
+        let b = Recording(kind: .audio, title: "B", contentType: "t", size: 1, fileName: "b.m4a", tags: ["jazz", "Improv"])
+
+        #expect(RecordingStore.allTags(in: [a, b]) == ["Scales", "Jazz", "Improv"])
+    }
+
+    // MARK: - notes
+
+    @Test func setNotesPersistsAndAllowsClearing() throws {
+        let (store, _, _) = try makeStore()
+        let source = try makeFixture(named: "notes-\(UUID().uuidString).pdf")
+        defer { try? FileManager.default.removeItem(at: source) }
+        let recording = try store.create(copying: source, kind: .file, title: "T", contentType: .pdf, duration: nil)
+        #expect(recording.notes.isEmpty)
+
+        store.setNotes("Work on the bridge section", for: recording)
+        #expect(recording.notes == "Work on the bridge section")
+
+        store.setNotes("", for: recording)
+        #expect(recording.notes.isEmpty)
+    }
+
     // MARK: - delete
 
     @Test func deleteRemovesFileAndRow() throws {

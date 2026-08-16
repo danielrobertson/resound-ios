@@ -15,6 +15,10 @@ struct RecordingDetailView: View {
     @State private var isRenamePresented = false
     @State private var newTitle = ""
     @State private var isDeletePresented = false
+    @State private var newTag = ""
+    @State private var notesDraft = ""
+    @State private var notesSaveTask: Task<Void, Never>?
+    @FocusState private var isNotesFocused: Bool
 
     private var fileURL: URL {
         store.url(for: recording)
@@ -35,6 +39,12 @@ struct RecordingDetailView: View {
 
                 mediaSection
                     .riseIn(delay: 0.08)
+
+                tagsSection
+                    .riseIn(delay: 0.16)
+
+                notesSection
+                    .riseIn(delay: 0.24)
             }
             .padding(20)
         }
@@ -88,6 +98,7 @@ struct RecordingDetailView: View {
             Text("It will be removed from your studio permanently.")
         }
         .task {
+            notesDraft = recording.notes
             if recording.kind == .audio || recording.kind == .video {
                 await playback.load(url: fileURL)
             }
@@ -97,7 +108,113 @@ struct RecordingDetailView: View {
         }
         .onDisappear {
             playback.stop()
+            notesSaveTask?.cancel()
+            store.setNotes(notesDraft, for: recording)
         }
+    }
+
+    // MARK: - Tags
+
+    private var tagsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionLabel("Tags")
+
+            if !recording.tags.isEmpty {
+                FlowLayout(spacing: 8) {
+                    ForEach(recording.tags, id: \.self) { tag in
+                        TagChip(tag: tag) {
+                            withAnimation(.settle) {
+                                store.removeTag(tag, from: recording)
+                            }
+                        }
+                    }
+                }
+            }
+
+            HStack(spacing: 8) {
+                Image(systemName: "tag")
+                    .font(.system(size: 13, weight: .light))
+                    .foregroundStyle(Color.appMutedForeground)
+                TextField("Add a tag", text: $newTag)
+                    .font(.body(14, relativeTo: .subheadline))
+                    .textInputAutocapitalization(.words)
+                    .submitLabel(.done)
+                    .onSubmit(commitTag)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+                    .fill(Color.appMuted.opacity(0.5))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+                    .strokeBorder(Color.appBorder.opacity(0.6))
+            )
+        }
+    }
+
+    private func commitTag() {
+        withAnimation(.settle) {
+            store.addTag(newTag, to: recording)
+        }
+        newTag = ""
+    }
+
+    // MARK: - Notes
+
+    private var notesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionLabel("Notes")
+
+            TextEditor(text: $notesDraft)
+                .font(.body(15, relativeTo: .body))
+                .foregroundStyle(Color.appForeground)
+                .scrollContentBackground(.hidden)
+                .focused($isNotesFocused)
+                .frame(minHeight: 120)
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+                        .fill(Color.appMuted.opacity(0.5))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+                        .strokeBorder(Color.appBorder.opacity(0.6))
+                )
+                .overlay(alignment: .topLeading) {
+                    if notesDraft.isEmpty && !isNotesFocused {
+                        Text("Main takeaways, things to practice…")
+                            .font(.body(15, relativeTo: .body))
+                            .foregroundStyle(Color.appMutedForeground.opacity(0.7))
+                            .padding(.top, 18)
+                            .padding(.leading, 15)
+                            .allowsHitTesting(false)
+                    }
+                }
+                .onChange(of: notesDraft) {
+                    scheduleNotesSave()
+                }
+        }
+    }
+
+    /// Debounces persistence so we don't hit SwiftData on every keystroke;
+    /// `onDisappear` flushes whatever is pending.
+    private func scheduleNotesSave() {
+        notesSaveTask?.cancel()
+        notesSaveTask = Task {
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            store.setNotes(notesDraft, for: recording)
+        }
+    }
+
+    private func sectionLabel(_ title: String) -> some View {
+        Text(title)
+            .font(.body(10, .semibold, relativeTo: .caption2))
+            .textCase(.uppercase)
+            .tracking(2)
+            .foregroundStyle(Color.appMutedForeground)
     }
 
     // MARK: - Media

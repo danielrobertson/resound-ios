@@ -26,11 +26,37 @@ struct RecordingCard: View {
                     Text(recording.metaLine)
                         .font(.body(12, relativeTo: .caption))
                         .foregroundStyle(Color.appMutedForeground)
+
+                    if !recording.tags.isEmpty {
+                        tagLine
+                            .padding(.top, 3)
+                    }
                 }
 
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// Up to three tag capsules; the rest collapse into "+n".
+    private var tagLine: some View {
+        HStack(spacing: 5) {
+            ForEach(recording.tags.prefix(3), id: \.self) { tag in
+                Text(tag)
+                    .font(.body(10, .medium, relativeTo: .caption2))
+                    .foregroundStyle(Color.appForeground.opacity(0.7))
+                    .lineLimit(1)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Color.appMuted))
+                    .overlay(Capsule().strokeBorder(Color.appBorder.opacity(0.7)))
+            }
+            if recording.tags.count > 3 {
+                Text("+\(recording.tags.count - 3)")
+                    .font(.body(10, .medium, relativeTo: .caption2))
+                    .foregroundStyle(Color.appMutedForeground)
+            }
         }
     }
 }

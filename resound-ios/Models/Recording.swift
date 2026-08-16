@@ -41,6 +41,10 @@ final class Recording {
     var fileName: String
     /// Reserved for future backend sync; "local" until then.
     var syncState: String
+    /// User-assigned tags, e.g. "Scales", "Jazz". Order is user-defined.
+    var tags: [String] = []
+    /// Free-form lesson notes; empty when the user hasn't written any.
+    var notes: String = ""
 
     var kind: RecordingKind {
         get { RecordingKind(rawValue: kindRaw) ?? .file }
@@ -56,7 +60,9 @@ final class Recording {
         duration: TimeInterval? = nil,
         createdAt: Date = .now,
         fileName: String,
-        syncState: String = "local"
+        syncState: String = "local",
+        tags: [String] = [],
+        notes: String = ""
     ) {
         self.id = id
         self.kindRaw = kind.rawValue
@@ -67,5 +73,7 @@ final class Recording {
         self.createdAt = createdAt
         self.fileName = fileName
         self.syncState = syncState
+        self.tags = tags
+        self.notes = notes
     }
 }

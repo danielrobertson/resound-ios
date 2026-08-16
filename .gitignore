@@ -2,3 +2,17 @@
 xcuserdata/
 DerivedData/
 *.xcuserstate
+
+# Firebase credentials and local state.
+# GoogleService-Info.plist is deliberately NOT ignored: it ships inside the
+# app bundle, so it is a public identifier, not a secret.
+*adminsdk*.json
+service-account*.json
+.env
+.env.*
+.runtimeconfig.json
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+database-debug.log*
+ui-debug.log*

@@ -9,6 +9,7 @@ struct resound_iosApp: App {
     private let store: RecordingStore
 
     init() {
+        FirebaseBootstrap.configure()
         do {
             let container = try ModelContainer(for: Recording.self)
             self.container = container

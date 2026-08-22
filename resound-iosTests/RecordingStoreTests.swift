@@ -45,7 +45,9 @@ struct RecordingStoreTests {
         #expect(recording.size == 2048)
         #expect(recording.title == "Handout")
         #expect(recording.contentType == UTType.pdf.identifier)
-        #expect(recording.syncState == "local")
+        // No auth/sync injected, so the row stays local and nothing is pushed.
+        #expect(recording.syncState == .local)
+        #expect(recording.storagePath == nil)
 
         // fileName is relative — "<uuid>.<ext>", no path separators.
         #expect(!recording.fileName.contains("/"))

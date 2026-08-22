@@ -17,14 +17,37 @@ final class RecordingStore {
     @ObservationIgnored
     private let modelContext: ModelContext
 
+    @ObservationIgnored
+    private let auth: AuthService?
+
+    @ObservationIgnored
+    private let sync: SyncService?
+
+    /// Rows with a push in flight, so a burst of edits (typing in the notes
+    /// field, adding three tags) doesn't start overlapping uploads for one
+    /// recording. The trailing edit is picked up by the retry pass.
+    @ObservationIgnored
+    private var inFlight: Set<UUID> = []
+
     /// - Parameters:
     ///   - modelContext: The SwiftData context to insert/delete rows in.
     ///   - directory: Where media files live. Defaults to
     ///     `Application Support/Recordings`, created on init.
-    init(modelContext: ModelContext, directory: URL? = nil) {
+    ///   - auth: Supplies the uid every backend path is scoped to. Nil in
+    ///     tests and in checkouts without Firebase — the store then behaves
+    ///     exactly as it did before sync existed.
+    ///   - sync: Transport for pushes. Nil alongside `auth`.
+    init(
+        modelContext: ModelContext,
+        directory: URL? = nil,
+        auth: AuthService? = nil,
+        sync: SyncService? = nil
+    ) {
         self.modelContext = modelContext
         self.directory = directory
             ?? URL.applicationSupportDirectory.appending(path: "Recordings", directoryHint: .isDirectory)
+        self.auth = auth
+        self.sync = sync
         try? FileManager.default.createDirectory(at: self.directory, withIntermediateDirectories: true)
     }
 
@@ -62,6 +85,7 @@ final class RecordingStore {
         )
         modelContext.insert(recording)
         try modelContext.save()
+        schedulePush(recording)
         return recording
     }
 
@@ -119,7 +143,7 @@ final class RecordingStore {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         recording.title = trimmed
-        try? modelContext.save()
+        commit(recording)
     }
 
     /// Adds a tag. Whitespace is trimmed; empty and duplicate tags
@@ -130,19 +154,30 @@ final class RecordingStore {
         let exists = recording.tags.contains { $0.caseInsensitiveCompare(trimmed) == .orderedSame }
         guard !exists else { return }
         recording.tags.append(trimmed)
-        try? modelContext.save()
+        commit(recording)
     }
 
     /// Removes a tag by exact value; a tag that isn't present is a no-op.
     func removeTag(_ tag: String, from recording: Recording) {
+        guard recording.tags.contains(tag) else { return }
         recording.tags.removeAll { $0 == tag }
-        try? modelContext.save()
+        commit(recording)
     }
 
     /// Replaces the notes text. Unlike titles, notes may be cleared to empty.
     func setNotes(_ notes: String, for recording: Recording) {
+        guard recording.notes != notes else { return }
         recording.notes = notes
+        commit(recording)
+    }
+
+    /// Stamps a metadata edit, persists it, and queues the push. Anything
+    /// that changes what the server should hold goes through here.
+    private func commit(_ recording: Recording) {
+        recording.updatedAt = .now
+        recording.syncState = .local
         try? modelContext.save()
+        schedulePush(recording)
     }
 
     /// Every distinct tag across `recordings`, first-use order preserved,
@@ -160,13 +195,105 @@ final class RecordingStore {
     }
 
     /// Deletes the media file (tolerating one that is already missing),
-    /// then the row.
+    /// then the row, then the server copy.
+    ///
+    /// Local deletion wins: the row goes whether or not the backend can be
+    /// reached. A failed remote delete leaves an orphaned blob and document
+    /// rather than a recording the user thought they'd removed.
     func delete(_ recording: Recording) throws {
         let fileURL = url(for: recording)
+        // Read what the remote delete needs *before* the row goes away.
+        let id = recording.id
+        let storagePath = recording.storagePath
+
         if FileManager.default.fileExists(atPath: fileURL.path) {
             try FileManager.default.removeItem(at: fileURL)
         }
         modelContext.delete(recording)
         try modelContext.save()
+
+        guard let sync, let auth else { return }
+        Task {
+            guard let uid = await auth.currentUID() else { return }
+            try? await sync.deleteRemote(id: id, storagePath: storagePath, uid: uid)
+        }
+    }
+
+    // MARK: - Sync
+
+    /// Pushes every recording the server is behind on. Called at launch so a
+    /// session that ended offline catches up, and to retry past failures.
+    func syncPending() async {
+        guard sync != nil else { return }
+        let descriptor = FetchDescriptor<Recording>(
+            predicate: #Predicate { $0.syncStateRaw != "synced" },
+            sortBy: [SortDescriptor(\.createdAt)]
+        )
+        guard let pending = try? modelContext.fetch(descriptor) else { return }
+        for recording in pending {
+            await push(recording)
+        }
+    }
+
+    private func schedulePush(_ recording: Recording) {
+        guard sync != nil else { return }
+        Task { await push(recording) }
+    }
+
+    /// Uploads the blob if the server hasn't got it, then writes metadata.
+    ///
+    /// Failures are recorded on the row and otherwise swallowed: backup is a
+    /// background courtesy, and the recording is safe on disk either way.
+    private func push(_ recording: Recording) async {
+        guard let sync, let auth else { return }
+
+        let id = recording.id
+        guard !inFlight.contains(id) else { return }
+        inFlight.insert(id)
+        defer { inFlight.remove(id) }
+
+        guard let uid = await auth.currentUID() else {
+            markFailed(recording)
+            return
+        }
+
+        // An edit landing mid-push bumps `updatedAt`, which means the copy we
+        // just sent is already stale. Loop until what we sent matches what's
+        // on disk, so a save during a slow upload isn't stranded until the
+        // next launch.
+        while !recording.isDeleted {
+            recording.syncState = .uploading
+            try? modelContext.save()
+
+            let snapshot = RecordingSnapshot(recording)
+            let fileURL = url(for: recording)
+
+            do {
+                let storagePath: String
+                if let known = recording.storagePath {
+                    storagePath = known
+                } else {
+                    storagePath = try await sync.uploadMedia(snapshot, from: fileURL, uid: uid)
+                }
+                try await sync.pushMetadata(snapshot, storagePath: storagePath, uid: uid)
+
+                guard !recording.isDeleted else { return }
+                recording.storagePath = storagePath
+                guard recording.updatedAt == snapshot.updatedAt else { continue }
+
+                recording.syncState = .synced
+                try? modelContext.save()
+                return
+            } catch {
+                markFailed(recording)
+                return
+            }
+        }
+    }
+
+    private func markFailed(_ recording: Recording) {
+        guard !recording.isDeleted else { return }
+        recording.syncState = .failed
+        try? modelContext.save()
     }
 }

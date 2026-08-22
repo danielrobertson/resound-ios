@@ -34,6 +34,8 @@ struct RecordingCard: View {
                 }
 
                 Spacer(minLength: 0)
+
+                SyncBadge(state: recording.syncState)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }

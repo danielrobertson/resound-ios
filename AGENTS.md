@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
 ## Project
 
@@ -12,7 +12,7 @@ Native SwiftUI port of the web app in the sibling repo `/Users/daniel/code/resou
 
 ## Build & run
 
-Use the `run` skill (or see `.claude/skills/run/SKILL.md`) to build and launch the app in the Simulator. Key gotcha: `xcode-select -p` on this machine points at CommandLineTools, not Xcode, so bare `xcodebuild` fails — prefix commands with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
+Use the `run` skill (or see `.Codex/skills/run/SKILL.md`) to build and launch the app in the Simulator. Key gotcha: `xcode-select -p` on this machine points at CommandLineTools, not Xcode, so bare `xcodebuild` fails — prefix commands with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
 
 Trust `xcodebuild`'s result over inline SourceKit diagnostics in the editor — SourceKit is unreliable in this setup and reports bogus "cannot find type in scope" errors for valid, pre-existing code.
 

@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xcodebuild -list *)",
+      "Bash(xcodebuild -showBuildSettings *)",
+      "Bash(xcodebuild -showdestinations *)",
+      "Bash(xcodebuild -version*)",
+      "Bash(xcrun simctl list *)",
+      "Bash(xcode-select -p)",
+      "Bash(pnpm typecheck)",
+      "Bash(wrangler d1 migrations list *)",
+      "Bash(wrangler deployments list *)",
+      "Bash(wrangler whoami)",
+      "Bash(defaults read *)",
+      "Bash(dig *)",
+      "Bash(sips -g *)",
+      "mcp__plugin_firebase_firebase__firebase_deploy_status",
+      "mcp__plugin_firebase_firebase__firebase_get_environment",
+      "mcp__plugin_firebase_firebase__firebase_get_security_rules",
+      "mcp__plugin_firebase_firebase__firebase_get_sdk_config",
+      "mcp__plugin_firebase_firebase__firebase_get_project",
+      "mcp__plugin_firebase_firebase__firebase_list_projects",
+      "mcp__plugin_firebase_firebase__firebase_list_apps"
+    ]
+  }
+}

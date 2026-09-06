@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Resound uses the camera to record video lesson moments.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Resound uses the microphone to record your lesson moments.</string>
 	<key>UIAppFonts</key>

@@ -1,6 +1,7 @@
 import FirebaseFirestore
 import FirebaseStorage
 import Foundation
+import UniformTypeIdentifiers
 
 /// The parts of a `Recording` that go to the server, lifted out of SwiftData
 /// so a push can't observe the model mutating mid-flight.
@@ -75,7 +76,7 @@ struct SyncService: Sendable {
 
         let path = Self.storagePath(uid: uid, fileName: snapshot.fileName)
         let metadata = StorageMetadata()
-        metadata.contentType = snapshot.contentType
+        metadata.contentType = UTType(snapshot.contentType)?.preferredMIMEType ?? "application/octet-stream"
 
         _ = try await Storage.storage().reference(withPath: path)
             .putFileAsync(from: fileURL, metadata: metadata)

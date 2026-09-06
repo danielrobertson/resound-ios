@@ -1,3 +1,4 @@
+import AVFoundation
 import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
@@ -40,6 +41,8 @@ struct PickedMedia: Transferable {
 private struct MediaImport: ViewModifier {
     @Environment(RecordingStore.self) private var store
 
+    @Binding var isVideoCaptureRequested: Bool
+    @State private var isCameraPresented = false
     @Binding var isFileImporterPresented: Bool
     @Binding var isPhotosPickerPresented: Bool
 
@@ -49,6 +52,27 @@ private struct MediaImport: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .onChange(of: isVideoCaptureRequested) { _, requested in
+                guard requested else { return }
+                isVideoCaptureRequested = false
+                Task { await openCamera() }
+            }
+            .fullScreenCover(isPresented: $isCameraPresented) {
+                VideoCaptureView { result in
+                    isCameraPresented = false
+                    guard let result else { return }
+                    switch result {
+                    case .success(let url):
+                        Task {
+                            defer { try? FileManager.default.removeItem(at: url) }
+                            await importFile(at: url)
+                        }
+                    case .failure:
+                        errorMessage = "The video couldn't be saved. Try recording it again."
+                    }
+                }
+                .ignoresSafeArea()
+            }
             .fileImporter(
                 isPresented: $isFileImporterPresented,
                 allowedContentTypes: [.audio, .movie, .image, .pdf]
@@ -77,11 +101,31 @@ private struct MediaImport: ViewModifier {
                 }
             }
             .animation(.settle, value: isImporting)
-            .alert("Import failed", isPresented: isErrorPresented) {
+            .alert("Couldn’t add media", isPresented: isErrorPresented) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(errorMessage ?? "That file couldn't be added to your studio.")
             }
+    }
+
+    @MainActor
+    private func openCamera() async {
+        guard UIImagePickerController.isSourceTypeAvailable(.camera),
+              UIImagePickerController.availableMediaTypes(for: .camera)?.contains(UTType.movie.identifier) == true else {
+            errorMessage = "This device has no video camera. Import a video from Photos instead."
+            return
+        }
+        let camera = await AVCaptureDevice.requestAccess(for: .video)
+        guard camera else {
+            errorMessage = "Allow camera access in Settings to record video."
+            return
+        }
+        let microphone = await AVCaptureDevice.requestAccess(for: .audio)
+        guard microphone else {
+            errorMessage = "Allow microphone access in Settings to record video with sound."
+            return
+        }
+        isCameraPresented = true
     }
 
     private var isErrorPresented: Binding<Bool> {
@@ -147,10 +191,12 @@ extension View {
     /// overlay, and the failure alert. Toggle either binding to present
     /// the matching picker.
     func mediaImport(
+        isVideoCaptureRequested: Binding<Bool>,
         isFileImporterPresented: Binding<Bool>,
         isPhotosPickerPresented: Binding<Bool>
     ) -> some View {
         modifier(MediaImport(
+            isVideoCaptureRequested: isVideoCaptureRequested,
             isFileImporterPresented: isFileImporterPresented,
             isPhotosPickerPresented: isPhotosPickerPresented
         ))

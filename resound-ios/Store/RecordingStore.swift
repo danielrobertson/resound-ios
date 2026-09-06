@@ -84,7 +84,13 @@ final class RecordingStore {
             fileName: fileName
         )
         modelContext.insert(recording)
-        try modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.delete(recording)
+            try? FileManager.default.removeItem(at: destination)
+            throw error
+        }
         schedulePush(recording)
         return recording
     }
@@ -209,6 +215,7 @@ final class RecordingStore {
         if FileManager.default.fileExists(atPath: fileURL.path) {
             try FileManager.default.removeItem(at: fileURL)
         }
+        try? FileManager.default.removeItem(at: fileURL.appendingPathExtension("thumbnail.jpg"))
         modelContext.delete(recording)
         try modelContext.save()
 

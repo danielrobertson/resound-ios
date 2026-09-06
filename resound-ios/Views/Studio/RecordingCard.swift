@@ -4,19 +4,25 @@ import SwiftUI
 /// horizontal double-bezel card: kind icon in a muted square, title, and the
 /// "Kind · size · date" meta line.
 struct RecordingCard: View {
+    @Environment(RecordingStore.self) private var store
     let recording: Recording
 
     var body: some View {
         DoubleBezel(outerRadius: 24, padding: 6, innerPadding: 20) {
             HStack(spacing: 14) {
-                Image(systemName: recording.kind.symbolName)
-                    .font(.system(size: 19, weight: .light))
-                    .foregroundStyle(Color.appForeground.opacity(0.7))
-                    .frame(width: 40, height: 40)
-                    .background(
-                        RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
-                            .fill(Color.appMuted)
-                    )
+                if recording.kind == .video {
+                    VideoThumbnail(url: store.url(for: recording))
+                } else {
+                    Image(systemName: recording.kind.symbolName)
+                        .font(.system(size: 19, weight: .light))
+                        .foregroundStyle(Color.appForeground.opacity(0.7))
+                        .frame(width: 40, height: 40)
+                        .background(
+                            RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+                                .fill(Color.appMuted)
+                        )
+
+                }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(recording.title)

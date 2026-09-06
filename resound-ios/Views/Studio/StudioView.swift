@@ -8,6 +8,7 @@ struct StudioView: View {
     @Query(sort: \Recording.createdAt, order: .reverse)
     private var recordings: [Recording]
 
+    @State private var isVideoCaptureRequested = false
     @State private var isRecordPresented = false
     @State private var isSettingsPresented = false
     @State private var isFileImporterPresented = false
@@ -57,6 +58,7 @@ struct StudioView: View {
                 SettingsView()
             }
             .mediaImport(
+                isVideoCaptureRequested: $isVideoCaptureRequested,
                 isFileImporterPresented: $isFileImporterPresented,
                 isPhotosPickerPresented: $isPhotosPickerPresented
             )
@@ -168,6 +170,11 @@ struct StudioView: View {
                 isRecordPresented = true
             } label: {
                 Label("Record audio", systemImage: "mic")
+            }
+            Button {
+                isVideoCaptureRequested = true
+            } label: {
+                Label("Record video", systemImage: "video")
             }
             Button {
                 isFileImporterPresented = true

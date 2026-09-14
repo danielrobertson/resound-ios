@@ -1,9 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// The home screen — the user's studio. Mirrors the web app's `/studio`
-/// route: eyebrow, display welcome, capture-count subtitle, and either the
-/// empty-state action cards or the recording list.
+/// Lesson media library with a persistent, video-first creation dock.
 struct StudioView: View {
     @Query(sort: \Recording.createdAt, order: .reverse)
     private var recordings: [Recording]
@@ -13,6 +11,7 @@ struct StudioView: View {
     @State private var isSettingsPresented = false
     @State private var isFileImporterPresented = false
     @State private var isPhotosPickerPresented = false
+    @State private var isTextPresented = false
     @State private var selectedTag: String?
 
     var body: some View {
@@ -23,11 +22,9 @@ struct StudioView: View {
                         .riseIn()
 
                     if recordings.isEmpty {
-                        EmptyStateView(
-                            onRecord: { isRecordPresented = true },
-                            onUpload: { isFileImporterPresented = true }
-                        )
-                        .padding(.top, 40)
+                        EmptyStateView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 140)
                     } else {
                         if !allTags.isEmpty {
                             tagFilter
@@ -41,18 +38,25 @@ struct StudioView: View {
                 .padding(.top, 24)
                 .padding(.bottom, 48)
             }
-            .background(Color.appBackground)
+            .background { StudioBackground() }
+            .safeAreaInset(edge: .bottom, spacing: 0) { captureDock }
             .navigationDestination(for: Recording.self) { recording in
-                RecordingDetailView(recording: recording)
+                if recording.isPlainText {
+                    LessonTextView(recording: recording)
+                } else {
+                    RecordingDetailView(recording: recording)
+                }
             }
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    addMenu
                     settingsButton
                 }
             }
             .fullScreenCover(isPresented: $isRecordPresented) {
                 RecordView()
+            }
+            .sheet(isPresented: $isTextPresented) {
+                LessonTextView()
             }
             .sheet(isPresented: $isSettingsPresented) {
                 SettingsView()
@@ -77,34 +81,44 @@ struct StudioView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Your studio")
-                .font(.body(10, .semibold, relativeTo: .caption2))
-                .textCase(.uppercase)
-                .tracking(2)
-                .foregroundStyle(Color.appMutedForeground)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
-                .overlay(Capsule().strokeBorder(Color.appBorder))
-
-            Text("Welcome back.")
-                .font(.display(30, .semibold, relativeTo: .largeTitle))
-                .foregroundStyle(Color.appForeground)
-                .padding(.top, 16)
-
-            Text(subtitle)
-                .font(.body(15, relativeTo: .subheadline))
-                .foregroundStyle(Color.appMutedForeground)
-                .padding(.top, 8)
-        }
+        Text("Library")
+            .font(.system(.largeTitle, weight: .medium))
+            .tracking(-0.8)
+            .foregroundStyle(.primary)
     }
 
-    private var subtitle: String {
-        if recordings.isEmpty {
-            "Capture your first lesson moment — it will resonate here."
-        } else {
-            "\(recordings.count) lesson \(recordings.count == 1 ? "moment" : "moments") captured."
+    private var captureDock: some View {
+        HStack(spacing: 12) {
+            addMenu
+                .frame(width: 44, height: 44)
+                .background(Color(uiColor: .tertiarySystemFill), in: Circle())
+            Spacer()
+            Button {
+                isRecordPresented = true
+            } label: {
+                HeroIcon(.microphone, size: 22)
+                    .frame(width: 52, height: 52)
+                    .background(Color(uiColor: .tertiarySystemFill), in: Circle())
+            }
+            .accessibilityLabel("Record audio")
+            Button {
+                isVideoCaptureRequested = true
+            } label: {
+                HeroIcon(.video, size: 24)
+                    .foregroundStyle(.white)
+                    .frame(width: 58, height: 58)
+                    .background(Color(red: 0.204, green: 0.231, blue: 1), in: Circle())
+            }
+            .accessibilityLabel("Record video")
         }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .padding(10)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 27))
+        .overlay(RoundedRectangle(cornerRadius: 27).strokeBorder(.primary.opacity(0.04)))
+        .shadow(color: .black.opacity(0.08), radius: 16, y: 6)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 8)
     }
 
     // MARK: - Tag filter
@@ -167,14 +181,9 @@ struct StudioView: View {
     private var addMenu: some View {
         Menu {
             Button {
-                isRecordPresented = true
+                isTextPresented = true
             } label: {
-                Label("Record audio", image: HeroIconName.microphone.rawValue)
-            }
-            Button {
-                isVideoCaptureRequested = true
-            } label: {
-                Label("Record video", image: HeroIconName.video.rawValue)
+                Label("Write text", image: HeroIconName.write.rawValue)
             }
             Button {
                 isFileImporterPresented = true
@@ -187,9 +196,10 @@ struct StudioView: View {
                 Label("Import from Photos", image: HeroIconName.photo.rawValue)
             }
         } label: {
-            HeroIcon(.plus)
+            HeroIcon(.plus, size: 22)
+                .frame(width: 44, height: 44)
         }
-        .accessibilityLabel("Add a lesson moment")
+        .accessibilityLabel("More creation options")
     }
 
     private var settingsButton: some View {

@@ -144,6 +144,23 @@ final class RecordingStore {
         return trimmed
     }
 
+    static func textTitle(_ text: String) -> String {
+        let words = text.split(whereSeparator: { $0.isWhitespace }).prefix(7).joined(separator: " ")
+        return words.isEmpty ? "Empty note" : String(words.prefix(80))
+    }
+
+    func setText(_ text: String, for recording: Recording) throws {
+        guard recording.isPlainText else { return }
+        try text.write(to: url(for: recording), atomically: true, encoding: .utf8)
+        recording.title = Self.textTitle(text)
+        recording.size = Int64(text.utf8.count)
+        recording.storagePath = nil
+        recording.updatedAt = .now
+        recording.syncState = .local
+        try modelContext.save()
+        schedulePush(recording)
+    }
+
     /// Renames a recording. Whitespace is trimmed; empty titles are ignored.
     func rename(_ recording: Recording, to title: String) {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -285,8 +302,8 @@ final class RecordingStore {
                 try await sync.pushMetadata(snapshot, storagePath: storagePath, uid: uid)
 
                 guard !recording.isDeleted else { return }
-                recording.storagePath = storagePath
                 guard recording.updatedAt == snapshot.updatedAt else { continue }
+                recording.storagePath = storagePath
 
                 recording.syncState = .synced
                 try? modelContext.save()

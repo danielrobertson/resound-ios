@@ -1,21 +1,21 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
-/// One row in the studio list — the web's `RecordingCard` translated into a
-/// horizontal double-bezel card: kind icon in a muted square, title, and the
-/// "Kind · size · date" meta line.
+/// A quiet library row with media preview, metadata, tags, and sync status.
 struct RecordingCard: View {
     @Environment(RecordingStore.self) private var store
     let recording: Recording
+    @State private var textTitle: String?
 
     var body: some View {
-        DoubleBezel(outerRadius: 24, padding: 6, innerPadding: 20) {
+        Group {
             HStack(spacing: 14) {
                 if recording.kind == .video {
                     VideoThumbnail(url: store.url(for: recording))
                 } else {
                     HeroIcon(recording.kind.icon, size: 19)
                         .foregroundStyle(Color.appForeground.opacity(0.7))
-                        .frame(width: 40, height: 40)
+                        .frame(width: 64, height: 64)
                         .background(
                             RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
                                 .fill(Color.appMuted)
@@ -24,12 +24,12 @@ struct RecordingCard: View {
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(recording.title)
-                        .font(.body(15, .semibold, relativeTo: .subheadline))
+                    Text(textTitle ?? recording.title)
+                        .font(.system(.subheadline, weight: .medium))
                         .foregroundStyle(Color.appForeground)
                         .lineLimit(1)
-                    Text(recording.metaLine)
-                        .font(.body(12, relativeTo: .caption))
+                    Text(Format.shortDate(recording.createdAt))
+                        .font(.caption)
                         .foregroundStyle(Color.appMutedForeground)
 
                     if !recording.tags.isEmpty {
@@ -43,6 +43,13 @@ struct RecordingCard: View {
                 SyncBadge(state: recording.syncState)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 12)
+        }
+        .task(id: recording.updatedAt) {
+            guard recording.isPlainText else { return }
+            if let text = try? String(contentsOf: store.url(for: recording), encoding: .utf8) {
+                textTitle = RecordingStore.textTitle(text)
+            }
         }
     }
 
@@ -82,6 +89,6 @@ extension RecordingKind {
 extension Recording {
     /// "Audio · 412 KB · Aug 3" — mirrors the web card's meta line.
     var metaLine: String {
-        "\(kind.rawValue.capitalized) · \(Format.size(size)) · \(Format.shortDate(createdAt))"
+        "\(UTType(contentType)?.conforms(to: .plainText) == true ? "Text" : kind.rawValue.capitalized) · \(Format.size(size)) · \(Format.shortDate(createdAt))"
     }
 }

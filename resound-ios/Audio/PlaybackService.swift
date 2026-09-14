@@ -15,6 +15,11 @@ final class PlaybackService {
     private(set) var currentTime: TimeInterval = 0
     private(set) var duration: TimeInterval = 0
 
+    private(set) var errorMessage: String?
+    @ObservationIgnored private var loadID = UUID()
+    @ObservationIgnored private var statusObserver: NSKeyValueObservation?
+    @ObservationIgnored private var itemObserver: NSKeyValueObservation?
+
     var progress: Double {
         duration > 0 ? currentTime / duration : 0
     }
@@ -38,6 +43,9 @@ final class PlaybackService {
     /// Replaces the current item with `url`, resolves its duration, and
     /// installs progress + end-of-playback observers.
     func load(url: URL) async {
+        let requestID = UUID()
+        loadID = requestID
+        errorMessage = nil
         teardownObservers()
         player.pause()
         isPlaying = false
@@ -52,19 +60,27 @@ final class PlaybackService {
             duration = assetDuration.seconds
         }
 
+        guard !Task.isCancelled, loadID == requestID else { return }
         installObservers(for: item)
     }
 
     // MARK: - Transport
 
-    func togglePlay() {
-        if isPlaying {
-            player.pause()
-            isPlaying = false
-        } else {
-            try? AudioSessionConfig.activateForPlayback()
+    func play() {
+        guard player.currentItem != nil, errorMessage == nil else { return }
+        do {
+            try AudioSessionConfig.activateForPlayback()
             player.play()
-            isPlaying = true
+        } catch {
+            errorMessage = "Audio output is unavailable. Try playing again."
+        }
+    }
+
+    func togglePlay() {
+        if player.rate > 0 || player.timeControlStatus == .waitingToPlayAtSpecifiedRate {
+            player.pause()
+        } else {
+            play()
         }
     }
 
@@ -78,6 +94,7 @@ final class PlaybackService {
     /// Pauses playback and tears down all observers. Call before letting
     /// the service go out of scope; `deinit` covers anything missed.
     func stop() {
+        loadID = UUID()
         player.pause()
         isPlaying = false
         teardownObservers()
@@ -86,6 +103,18 @@ final class PlaybackService {
     // MARK: - Observers
 
     private func installObservers(for item: AVPlayerItem) {
+        statusObserver = player.observe(\.timeControlStatus, options: [.initial, .new]) { [weak self] player, _ in
+            let playing = player.timeControlStatus != .paused
+            Task { @MainActor [weak self] in self?.isPlaying = playing }
+        }
+        itemObserver = item.observe(\.status, options: [.initial, .new]) { [weak self] item, _ in
+            guard item.status == .failed else { return }
+            Task { @MainActor [weak self] in
+                self?.errorMessage = "This file couldn’t be opened. Check that it is available and try again."
+                self?.isPlaying = false
+            }
+        }
+
         let interval = CMTime(seconds: 0.05, preferredTimescale: 600)
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             MainActor.assumeIsolated {
@@ -109,6 +138,8 @@ final class PlaybackService {
     }
 
     private func teardownObservers() {
+        statusObserver = nil
+        itemObserver = nil
         if let timeObserver {
             player.removeTimeObserver(timeObserver)
             self.timeObserver = nil

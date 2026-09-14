@@ -1,9 +1,7 @@
 import AVKit
 import SwiftUI
 
-/// Detail for one recording: audio gets the 56-bar scrubbable waveform,
-/// video a player, everything else a QuickLook preview. Toolbar carries
-/// share, rename, and delete.
+/// Playback comes first; title edits are inline and metadata lives in a sheet.
 struct RecordingDetailView: View {
     @Environment(RecordingStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -12,102 +10,173 @@ struct RecordingDetailView: View {
 
     @State private var playback = PlaybackService()
     @State private var samples: [Float]?
-    @State private var isRenamePresented = false
-    @State private var newTitle = ""
+    @State private var titleDraft = ""
+    @State private var isDetailsPresented = false
     @State private var isDeletePresented = false
+    @State private var deletionError: String?
+    @State private var wasDeleted = false
+    @State private var isInitialized = false
     @State private var newTag = ""
     @State private var notesDraft = ""
     @State private var notesSaveTask: Task<Void, Never>?
     @FocusState private var isNotesFocused: Bool
+    @FocusState private var isTitleFocused: Bool
 
-    private var fileURL: URL {
-        store.url(for: recording)
-    }
+    private var fileURL: URL { store.url(for: recording) }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(recording.title)
-                        .font(.display(26, .semibold, relativeTo: .title))
-                        .foregroundStyle(Color.appForeground)
-                    Text(recording.metaLine)
-                        .font(.body(13, relativeTo: .footnote))
-                        .foregroundStyle(Color.appMutedForeground)
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 28) {
+                    mediaSection
+                        .frame(minHeight: recording.kind == .audio ? geometry.size.height * 0.48 : nil)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        TextField("Title", text: $titleDraft, axis: .vertical)
+                            .font(.system(.title, weight: .medium))
+                            .tracking(-0.6)
+                            .focused($isTitleFocused)
+                            .submitLabel(.done)
+                            .onSubmit { isTitleFocused = false }
+                            .accessibilityLabel("Recording title")
+                            .accessibilityHint("Tap to rename this recording")
+                        Text(recording.createdAt.formatted(date: .abbreviated, time: .shortened))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Button { isDetailsPresented = true } label: {
+                        HStack(spacing: 8) {
+                            HeroIcon(.information)
+                            Text("Notes & tags")
+                            Spacer()
+                            HeroIcon(.chevronRight, size: 12)
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .riseIn()
-
-                mediaSection
-                    .riseIn(delay: 0.08)
-
-                tagsSection
-                    .riseIn(delay: 0.16)
-
-                notesSection
-                    .riseIn(delay: 0.24)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 32)
             }
-            .padding(20)
+            .scrollDismissesKeyboard(.interactively)
         }
-        .background(Color.appBackground)
+        .background { StudioBackground() }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                ShareLink(item: fileURL) {
-                    HeroIcon(.share)
+            ToolbarItem(placement: .topBarTrailing) {
+                if isTitleFocused {
+                    Button("Done") { isTitleFocused = false }
+                } else {
+                    Menu {
+                        Button { isDetailsPresented = true } label: {
+                            Label("Edit notes & tags", image: HeroIconName.tag.rawValue)
+                        }
+                        ShareLink(item: fileURL) {
+                            Label("Share", image: HeroIconName.share.rawValue)
+                        }
+                        Button(role: .destructive) { isDeletePresented = true } label: {
+                            Label("Delete recording", image: HeroIconName.trash.rawValue)
+                        }
+                    } label: {
+                        HeroIcon(.ellipsis)
+                    }
+                    .accessibilityLabel("Recording options")
                 }
-                .accessibilityLabel("Share")
-
-                Button {
-                    newTitle = recording.title
-                    isRenamePresented = true
-                } label: {
-                    HeroIcon(.write)
-                }
-                .accessibilityLabel("Rename")
-
-                Button(role: .destructive) {
-                    isDeletePresented = true
-                } label: {
-                    HeroIcon(.trash)
-                }
-                .accessibilityLabel("Delete")
             }
         }
-        .alert("Rename", isPresented: $isRenamePresented) {
-            TextField("Title", text: $newTitle)
-            Button("Save") {
-                store.rename(recording, to: newTitle)
+        .sheet(isPresented: $isDetailsPresented, onDismiss: saveDetails) {
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 28) {
+                        Text(recording.metaLine)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        tagsSection
+                        notesSection
+                    }
+                    .padding(20)
+                }
+                .background { StudioBackground() }
+                .navigationTitle("Notes & tags")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { isDetailsPresented = false }
+                    }
+                }
             }
-            Button("Cancel", role: .cancel) {}
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
-        .confirmationDialog(
-            "Delete this recording?",
-            isPresented: $isDeletePresented,
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                playback.stop()
-                try? store.delete(recording)
-                dismiss()
+        .confirmationDialog("Delete this recording?", isPresented: $isDeletePresented, titleVisibility: .visible) {
+            Button("Delete recording", role: .destructive) {
+                do {
+                    try store.delete(recording)
+                    wasDeleted = true
+                    notesSaveTask?.cancel()
+                    playback.stop()
+                    dismiss()
+                } catch {
+                    deletionError = error.localizedDescription
+                }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("It will be removed from your studio permanently.")
+            Text("The recording and its notes will be permanently deleted.")
+        }
+        .alert("Couldn’t delete recording", isPresented: Binding(
+            get: { deletionError != nil }, set: { if !$0 { deletionError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deletionError ?? "Try again.")
         }
         .task {
-            notesDraft = recording.notes
+            if !isInitialized {
+                titleDraft = recording.title
+                notesDraft = recording.notes
+                isInitialized = true
+            }
             if recording.kind == .audio || recording.kind == .video {
                 await playback.load(url: fileURL)
+                guard !Task.isCancelled else { return }
+                playback.play()
             }
+        }
+        .task {
             if recording.kind == .audio {
                 samples = try? await WaveformSampler.samples(from: fileURL)
             }
         }
+        .onChange(of: isTitleFocused) { _, focused in
+            if !focused { saveTitle() }
+        }
         .onDisappear {
             playback.stop()
-            notesSaveTask?.cancel()
-            store.setNotes(notesDraft, for: recording)
+            guard !wasDeleted, isInitialized else { return }
+            saveTitle()
+            saveDetails()
         }
+    }
+
+    private func saveTitle() {
+        guard isInitialized, !wasDeleted else { return }
+        if titleDraft.trimmingCharacters(in: .whitespacesAndNewlines) != recording.title {
+            store.rename(recording, to: titleDraft)
+        }
+        titleDraft = recording.title
+    }
+
+    private func saveDetails() {
+        guard isInitialized, !wasDeleted else { return }
+        notesSaveTask?.cancel()
+        if !newTag.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { commitTag() }
+        store.setNotes(notesDraft, for: recording)
     }
 
     // MARK: - Tags
@@ -207,9 +276,7 @@ struct RecordingDetailView: View {
 
     private func sectionLabel(_ title: String) -> some View {
         Text(title)
-            .font(.body(10, .semibold, relativeTo: .caption2))
-            .textCase(.uppercase)
-            .tracking(2)
+            .font(.subheadline.weight(.medium))
             .foregroundStyle(Color.appMutedForeground)
     }
 
@@ -217,59 +284,86 @@ struct RecordingDetailView: View {
 
     @ViewBuilder
     private var mediaSection: some View {
-        switch recording.kind {
-        case .audio:
-            audioPlayer
-        case .video:
-            VideoPlayer(player: playback.player)
-                .aspectRatio(16 / 9, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: Radius.xl3, style: .continuous))
-        case .file:
-            QuickLookPreview(url: fileURL)
-                .frame(height: 460)
-                .clipShape(RoundedRectangle(cornerRadius: Radius.xl3, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radius.xl3, style: .continuous)
-                        .strokeBorder(Color.appBorder.opacity(0.6), lineWidth: 1)
-                )
+        if let error = playback.errorMessage {
+            ContentUnavailableView {
+                Label("Couldn’t play recording", image: HeroIconName.warning.rawValue)
+            } description: {
+                Text(error)
+            } actions: {
+                Button("Try again") {
+                    Task {
+                        await playback.load(url: fileURL)
+                        guard !Task.isCancelled else { return }
+                        playback.play()
+                    }
+                }
+            }
+        } else {
+            switch recording.kind {
+            case .audio:
+                audioPlayer
+            case .video:
+                VideoPlayer(player: playback.player)
+                    .frame(height: 380)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            case .file:
+                QuickLookPreview(url: fileURL)
+                    .frame(height: 460)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            }
         }
     }
 
     private var audioPlayer: some View {
-        DoubleBezel(innerPadding: 24) {
-            VStack(spacing: 24) {
-                StaticWaveformView(
-                    samples: samples ?? WaveformSampler.placeholder,
-                    progress: playback.progress
-                ) { fraction in
-                    playback.seek(to: fraction * playbackDuration)
-                }
-                .frame(height: 88)
-                .opacity(samples == nil ? 0.35 : 1)
-                .animation(.settle, value: samples == nil)
-
-                HStack(spacing: 16) {
-                    Button {
-                        playback.togglePlay()
-                    } label: {
-                        HeroIcon(playback.isPlaying ? .pause : .play, size: 18)
-                            .foregroundStyle(Color.appPrimaryForeground)
-                            .frame(width: 52, height: 52)
-                            .background(Circle().fill(Color.appPrimary))
-                            .contentTransition(.opacity)
-                    }
-                    .accessibilityLabel(playback.isPlaying ? "Pause" : "Play")
-
-                    Text("\(Format.duration(playback.currentTime)) / \(Format.duration(playbackDuration))")
-                        .font(.body(14, .medium, relativeTo: .subheadline))
-                        .monospacedDigit()
-                        .foregroundStyle(Color.appMutedForeground)
-
-                    Spacer(minLength: 0)
-                }
+        VStack(spacing: 28) {
+            Spacer(minLength: 12)
+            StaticWaveformView(
+                samples: samples ?? WaveformSampler.placeholder,
+                progress: playback.progress
+            ) { fraction in
+                playback.seek(to: fraction * playbackDuration)
             }
-            .frame(maxWidth: .infinity)
+            .frame(height: 140)
+            .opacity(samples == nil ? 0.35 : 1)
+            .animation(.settle, value: samples == nil)
+
+            HStack {
+                Text(Format.duration(playback.currentTime))
+                Spacer()
+                Text(Format.duration(playbackDuration))
+            }
+            .font(.caption.monospacedDigit())
+            .foregroundStyle(.secondary)
+
+            HStack(spacing: 36) {
+                skipButton(seconds: -15, icon: .backward, label: "Back 15 seconds")
+                Button { playback.togglePlay() } label: {
+                    HeroIcon(playback.isPlaying ? .pause : .play, size: 28)
+                        .foregroundStyle(.white)
+                        .frame(width: 80, height: 80)
+                        .background(Color(red: 0.204, green: 0.231, blue: 1), in: Circle())
+                        .contentTransition(.opacity)
+                }
+                .accessibilityLabel(playback.isPlaying ? "Pause" : "Play")
+                skipButton(seconds: 15, icon: .forward, label: "Forward 15 seconds")
+            }
+            .buttonStyle(.plain)
+            Spacer(minLength: 12)
         }
+        .padding(.horizontal, 12)
+    }
+
+    private func skipButton(seconds: TimeInterval, icon: HeroIconName, label: String) -> some View {
+        Button { playback.seek(to: playback.currentTime + seconds) } label: {
+            VStack(spacing: 2) {
+                HeroIcon(icon, size: 22)
+                Text("15")
+                    .font(.caption2.monospacedDigit().weight(.medium))
+            }
+                .foregroundStyle(.primary)
+                .frame(width: 48, height: 48)
+        }
+        .accessibilityLabel(label)
     }
 
     /// The player's duration once loaded, falling back to the stored value.

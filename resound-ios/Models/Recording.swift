@@ -69,6 +69,10 @@ final class Recording {
     /// Free-form lesson notes; empty when the user hasn't written any.
     var notes: String = ""
 
+    var isPlainText: Bool {
+        kind == .file && UTType(contentType)?.conforms(to: .plainText) == true
+    }
+
     var kind: RecordingKind {
         get { RecordingKind(rawValue: kindRaw) ?? .file }
         set { kindRaw = newValue.rawValue }

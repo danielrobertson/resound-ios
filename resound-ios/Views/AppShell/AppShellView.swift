@@ -17,7 +17,7 @@ struct AppShellView: View {
 
         var icon: HeroIconName {
             switch self {
-            case .review: .audio
+            case .review: .review
             case .library: .folder
             case .find: .tag
             case .you: .settings
@@ -45,6 +45,7 @@ struct AppShellView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             AppFooter(selectedTab: $selectedTab) { isCreatePresented = true }
         }
+        .background(Color.appBackground)
         .confirmationDialog("Add to Resound", isPresented: $isCreatePresented, titleVisibility: .visible) {
             Button { isAudioRecordPresented = true } label: {
                 Label("Record audio", image: HeroIconName.microphone.rawValue)
@@ -81,51 +82,59 @@ struct AppShellView: View {
 
 private struct AppFooter: View {
     @Binding var selectedTab: AppShellView.Tab
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .caption2) private var itemHeight = 54.0
     let create: () -> Void
 
     var body: some View {
-        HStack(spacing: 0) {
-            tabButton(.review)
-            tabButton(.library)
-            Spacer(minLength: 54)
-            tabButton(.find)
-            tabButton(.you)
-        }
-        .overlay(alignment: .top) {
+        HStack(spacing: 12) {
+            HStack(spacing: 0) {
+                ForEach(AppShellView.Tab.allCases, id: \.self) { tab in
+                    tabButton(tab)
+                }
+            }
+            .padding(5)
+            .background(.regularMaterial, in: Capsule())
+            .overlay {
+                Capsule().strokeBorder(Color.appBorder.opacity(0.65), lineWidth: 0.5)
+            }
+            .shadow(color: .black.opacity(0.09), radius: 16, y: 6)
+
             Button(action: create) {
-                HeroIcon(.plus, size: 25)
+                HeroIcon(.plus, size: 27)
                     .foregroundStyle(Color.appPrimaryForeground)
-                    .frame(width: 58, height: 58)
+                    .frame(width: 64, height: 64)
                     .background(Circle().fill(Color.appPrimary))
-                    .shadow(color: Color.appPrimary.opacity(0.3), radius: 12, y: 5)
+                    .overlay {
+                        Circle().strokeBorder(.white.opacity(0.18), lineWidth: 0.5)
+                    }
+                    .shadow(color: Color.appPrimary.opacity(0.22), radius: 12, y: 5)
             }
             .buttonStyle(FooterPressStyle())
             .accessibilityLabel("Add to Resound")
             .accessibilityHint("Records audio or video, imports media, or writes a note")
-            .offset(y: -24)
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 15)
-        .padding(.bottom, 7)
-        .background(.ultraThinMaterial)
-        .overlay(alignment: .top) {
-            Rectangle().fill(Color.appBorder.opacity(0.55)).frame(height: 0.5)
-        }
+        .frame(maxWidth: 520)
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .frame(maxWidth: .infinity)
     }
 
     private func tabButton(_ tab: AppShellView.Tab) -> some View {
         Button {
-            withAnimation(.settle) { selectedTab = tab }
+            withAnimation(reduceMotion ? nil : .settle) { selectedTab = tab }
         } label: {
             VStack(spacing: 4) {
                 HeroIcon(tab.icon, size: 21).frame(height: 24)
                 Text(tab.title)
-                    .font(.body(10, .medium, relativeTo: .caption2))
+                    .font(.body(10, .semibold, relativeTo: .caption2))
                     .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
-            .foregroundStyle(selectedTab == tab ? Color.appPrimary : Color.appMutedForeground)
-            .frame(maxWidth: .infinity, minHeight: 46)
-            .contentShape(Rectangle())
+            .foregroundStyle(selectedTab == tab ? Color.appForeground : Color.appMutedForeground)
+            .frame(maxWidth: .infinity, minHeight: itemHeight)
+            .contentShape(Capsule())
         }
         .buttonStyle(FooterPressStyle())
         .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])

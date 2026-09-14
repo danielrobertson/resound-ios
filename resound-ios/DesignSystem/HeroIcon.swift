@@ -4,6 +4,7 @@ import SwiftUI
 enum HeroIconName: String {
     case microphone = "hero-microphone-outline"
     case audio = "hero-musical-note-outline"
+    case review = "hero-clipboard-document-check-outline"
     case video = "hero-video-camera-outline"
     case document = "hero-document-text-outline"
     case information = "hero-information-circle-outline"

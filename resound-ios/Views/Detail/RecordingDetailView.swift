@@ -53,8 +53,7 @@ struct RecordingDetailView: View {
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 ShareLink(item: fileURL) {
-                    Image(systemName: "square.and.arrow.up")
-                        .fontWeight(.light)
+                    HeroIcon(.share)
                 }
                 .accessibilityLabel("Share")
 
@@ -62,16 +61,14 @@ struct RecordingDetailView: View {
                     newTitle = recording.title
                     isRenamePresented = true
                 } label: {
-                    Image(systemName: "pencil")
-                        .fontWeight(.light)
+                    HeroIcon(.write)
                 }
                 .accessibilityLabel("Rename")
 
                 Button(role: .destructive) {
                     isDeletePresented = true
                 } label: {
-                    Image(systemName: "trash")
-                        .fontWeight(.light)
+                    HeroIcon(.trash)
                 }
                 .accessibilityLabel("Delete")
             }
@@ -132,8 +129,7 @@ struct RecordingDetailView: View {
             }
 
             HStack(spacing: 8) {
-                Image(systemName: "tag")
-                    .font(.system(size: 13, weight: .light))
+                HeroIcon(.tag, size: 13)
                     .foregroundStyle(Color.appMutedForeground)
                 TextField("Add a tag", text: $newTag)
                     .font(.body(14, relativeTo: .subheadline))
@@ -256,12 +252,11 @@ struct RecordingDetailView: View {
                     Button {
                         playback.togglePlay()
                     } label: {
-                        Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 18))
+                        HeroIcon(playback.isPlaying ? .pause : .play, size: 18)
                             .foregroundStyle(Color.appPrimaryForeground)
                             .frame(width: 52, height: 52)
                             .background(Circle().fill(Color.appPrimary))
-                            .contentTransition(.symbolEffect(.replace))
+                            .contentTransition(.opacity)
                     }
                     .accessibilityLabel(playback.isPlaying ? "Pause" : "Play")
 

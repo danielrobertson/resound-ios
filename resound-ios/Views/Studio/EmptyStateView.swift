@@ -10,7 +10,7 @@ struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: 20) {
             ActionCard(
-                icon: "mic",
+                icon: .microphone,
                 title: "Record audio",
                 subtitle: "Capture the sound of today's lesson.",
                 cta: "Start recording",
@@ -20,7 +20,7 @@ struct EmptyStateView: View {
             .riseIn(delay: 0.12)
 
             ActionCard(
-                icon: "tray.and.arrow.up",
+                icon: .upload,
                 title: "Upload a file",
                 subtitle: "Video, audio, image, or PDF.",
                 cta: "Choose a file",

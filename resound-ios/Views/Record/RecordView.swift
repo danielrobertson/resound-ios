@@ -143,8 +143,7 @@ struct RecordView: View {
                     dismiss()
                 }
             } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 18, weight: .light))
+                HeroIcon(.close, size: 18)
                     .foregroundStyle(Color.appForeground)
                     .frame(width: 56, height: 56)
                     .background(Circle().fill(Color.appMuted))
@@ -163,12 +162,11 @@ struct RecordView: View {
                     }
                 }
             } label: {
-                Image(systemName: recorder.state == .paused ? "play.fill" : "pause.fill")
-                    .font(.system(size: 20))
+                HeroIcon(recorder.state == .paused ? .play : .pause, size: 20)
                     .foregroundStyle(Color.appForeground)
                     .frame(width: 64, height: 64)
                     .background(Circle().fill(Color.appMuted))
-                    .contentTransition(.symbolEffect(.replace))
+                    .contentTransition(.opacity)
             }
             .accessibilityLabel(recorder.state == .paused ? "Resume recording" : "Pause recording")
             .disabled(recorder.state == .idle)
@@ -181,8 +179,7 @@ struct RecordView: View {
                     pending = PendingRecording(url: result.url, duration: result.duration)
                 }
             } label: {
-                Image(systemName: "stop.fill")
-                    .font(.system(size: 22))
+                HeroIcon(.stop, size: 22)
                     .foregroundStyle(Color.appPrimaryForeground)
                     .frame(width: 72, height: 72)
                     .background(Circle().fill(Color.appPrimary))
@@ -196,8 +193,7 @@ struct RecordView: View {
 
     private var deniedView: some View {
         VStack(spacing: 0) {
-            Image(systemName: "mic.slash")
-                .font(.system(size: 40, weight: .light))
+            HeroIcon(.unavailable, size: 40)
                 .foregroundStyle(Color.appMutedForeground)
 
             Text("Microphone access is off")

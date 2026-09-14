@@ -13,8 +13,7 @@ struct RecordingCard: View {
                 if recording.kind == .video {
                     VideoThumbnail(url: store.url(for: recording))
                 } else {
-                    Image(systemName: recording.kind.symbolName)
-                        .font(.system(size: 19, weight: .light))
+                    HeroIcon(recording.kind.icon, size: 19)
                         .foregroundStyle(Color.appForeground.opacity(0.7))
                         .frame(width: 40, height: 40)
                         .background(
@@ -70,13 +69,12 @@ struct RecordingCard: View {
 }
 
 extension RecordingKind {
-    /// SF Symbol per kind, matching the web's Phosphor choices
-    /// (WaveSine / VideoCamera / File) at light weight.
-    var symbolName: String {
+    /// Heroicon for each recording kind.
+    var icon: HeroIconName {
         switch self {
-        case .audio: "waveform"
-        case .video: "video"
-        case .file: "doc.text"
+        case .audio: .audio
+        case .video: .video
+        case .file: .document
         }
     }
 }

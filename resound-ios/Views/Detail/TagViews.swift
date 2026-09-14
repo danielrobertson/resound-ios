@@ -69,8 +69,7 @@ struct TagChip: View {
 
             if let onRemove {
                 Button(action: onRemove) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 9, weight: .medium))
+                    HeroIcon(.close, size: 9)
                         .foregroundStyle(Color.appMutedForeground)
                         .frame(width: 16, height: 16)
                         .contentShape(Circle())

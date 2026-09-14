@@ -18,13 +18,11 @@ struct SyncBadge: View {
                     .controlSize(.mini)
                     .accessibilityLabel("Backing up")
             case .local:
-                Image(systemName: "arrow.up.circle")
-                    .font(.system(size: 15, weight: .light))
+                HeroIcon(.backup, size: 15)
                     .foregroundStyle(Color.appMutedForeground.opacity(0.6))
                     .accessibilityLabel("Waiting to back up")
             case .failed:
-                Image(systemName: "exclamationmark.icloud")
-                    .font(.system(size: 15, weight: .light))
+                HeroIcon(.warning, size: 15)
                     .foregroundStyle(Color.appDestructive.opacity(0.8))
                     .accessibilityLabel("Backup failed")
             }

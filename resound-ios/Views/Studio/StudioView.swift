@@ -169,26 +169,25 @@ struct StudioView: View {
             Button {
                 isRecordPresented = true
             } label: {
-                Label("Record audio", systemImage: "mic")
+                Label("Record audio", image: HeroIconName.microphone.rawValue)
             }
             Button {
                 isVideoCaptureRequested = true
             } label: {
-                Label("Record video", systemImage: "video")
+                Label("Record video", image: HeroIconName.video.rawValue)
             }
             Button {
                 isFileImporterPresented = true
             } label: {
-                Label("Import from Files", systemImage: "folder")
+                Label("Import from Files", image: HeroIconName.folder.rawValue)
             }
             Button {
                 isPhotosPickerPresented = true
             } label: {
-                Label("Import from Photos", systemImage: "photo.on.rectangle")
+                Label("Import from Photos", image: HeroIconName.photo.rawValue)
             }
         } label: {
-            Image(systemName: "plus")
-                .fontWeight(.light)
+            HeroIcon(.plus)
         }
         .accessibilityLabel("Add a lesson moment")
     }
@@ -197,8 +196,7 @@ struct StudioView: View {
         Button {
             isSettingsPresented = true
         } label: {
-            Image(systemName: "gearshape")
-                .fontWeight(.light)
+            HeroIcon(.settings)
         }
         .accessibilityLabel("Settings")
     }

@@ -13,15 +13,14 @@ struct VideoThumbnail: View {
                     .resizable()
                     .scaledToFill()
             } else {
-                Image(systemName: "video")
+                HeroIcon(.video)
                     .foregroundStyle(Color.appMutedForeground)
             }
         }
         .frame(width: 64, height: 64)
         .clipped()
         .overlay(alignment: .bottomTrailing) {
-            Image(systemName: "play.fill")
-                .font(.system(size: 9))
+            HeroIcon(.play, size: 9)
                 .foregroundStyle(.white)
                 .padding(5)
                 .background(.black.opacity(0.6), in: Circle())

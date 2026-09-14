@@ -90,8 +90,7 @@ private struct DesignSystemGallery: View {
         VStack(alignment: .leading, spacing: 14) {
             DoubleBezel {
                 VStack(alignment: .leading, spacing: 10) {
-                    Image(systemName: "microphone")
-                        .font(.system(size: 20, weight: .light))
+                    HeroIcon(.microphone, size: 20)
                         .foregroundStyle(Color.appPrimary)
                     Text("Record audio")
                         .font(.display(19, .semibold, relativeTo: .title3))
@@ -109,8 +108,7 @@ private struct DesignSystemGallery: View {
                         .fill(Color.appMuted)
                         .frame(width: 40, height: 40)
                         .overlay(
-                            Image(systemName: "waveform")
-                                .font(.system(size: 17, weight: .light))
+                            HeroIcon(.audio, size: 17)
                                 .foregroundStyle(Color.appForeground.opacity(0.7))
                         )
                     VStack(alignment: .leading, spacing: 2) {

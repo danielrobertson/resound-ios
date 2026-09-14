@@ -4,7 +4,7 @@ import SwiftUI
 /// square, a title, a one-line description, and a capsule CTA whose
 /// trailing arrow lives in its own small circle (the "button-in-button").
 struct ActionCard: View {
-    var icon: String
+    var icon: HeroIconName
     var title: String
     var subtitle: String
     var cta: String
@@ -34,8 +34,7 @@ struct ActionCard: View {
     }
 
     private var iconSquare: some View {
-        Image(systemName: icon)
-            .font(.system(size: 20, weight: .light))
+        HeroIcon(icon, size: 20)
             .foregroundStyle(accent ? Color.appPrimary : Color.appForeground.opacity(0.7))
             .frame(width: 44, height: 44)
             .background(
@@ -51,8 +50,7 @@ struct ActionCard: View {
                     .font(.body(14, .medium, relativeTo: .subheadline))
 
                 // Button-in-button: the trailing glyph lives in its own circle.
-                Image(systemName: "arrow.up.right")
-                    .font(.system(size: 12, weight: .light))
+                HeroIcon(.arrowUpRight, size: 12)
                     .frame(width: 28, height: 28)
                     .background(
                         Circle().fill(
@@ -76,14 +74,14 @@ struct ActionCard: View {
 #Preview("Action cards") {
     VStack(spacing: 20) {
         ActionCard(
-            icon: "mic",
+            icon: .microphone,
             title: "Record audio",
             subtitle: "Capture the sound of today's lesson.",
             cta: "Start recording",
             accent: true
         ) {}
         ActionCard(
-            icon: "tray.and.arrow.up",
+            icon: .upload,
             title: "Upload a file",
             subtitle: "Video, audio, image, or PDF.",
             cta: "Choose a file"

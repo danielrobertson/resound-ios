@@ -28,7 +28,7 @@ struct resound_iosApp: App {
 
     var body: some Scene {
         WindowGroup {
-            StudioView()
+            AppShellView()
                 .environment(store)
                 .environment(auth)
                 .modelContainer(container)

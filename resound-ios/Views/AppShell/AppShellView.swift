@@ -26,7 +26,6 @@ struct AppShellView: View {
     }
 
     @State private var selectedTab: Tab = .library
-    @State private var isCreatePresented = false
     @State private var isVideoCaptureRequested = false
     @State private var isFileImporterPresented = false
     @State private var isPhotosPickerPresented = false
@@ -41,22 +40,11 @@ struct AppShellView: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            AppFooter(selectedTab: $selectedTab) { isCreatePresented = true }
+            AppFooter(selectedTab: $selectedTab) { isVideoCaptureRequested = true }
         }
         .background(Color.appBackground)
         .foregroundStyle(Color.appForeground)
         .tint(Color.primary)
-        .confirmationDialog("Add to Resound", isPresented: $isCreatePresented, titleVisibility: .visible) {
-            Button { isVideoCaptureRequested = true } label: {
-                Label("Record video", image: HeroIconName.video.rawValue)
-            }
-            Button { isFileImporterPresented = true } label: {
-                Label("Import from Files", image: HeroIconName.folder.rawValue)
-            }
-            Button { isPhotosPickerPresented = true } label: {
-                Label("Import from Photos", image: HeroIconName.photo.rawValue)
-            }
-        }
         .mediaImport(
             isVideoCaptureRequested: $isVideoCaptureRequested,
             isFileImporterPresented: $isFileImporterPresented,
@@ -96,8 +84,8 @@ private struct AppFooter: View {
                 .buttonBorderShape(.circle)
                 .controlSize(.large)
                 .tint(Color.appPrimary)
-                .accessibilityLabel("Add to Resound")
-                .accessibilityHint("Record or import a video")
+                .accessibilityLabel("Record video")
+                .accessibilityHint("Opens the device camera")
             }
         }
         .frame(maxWidth: 520)

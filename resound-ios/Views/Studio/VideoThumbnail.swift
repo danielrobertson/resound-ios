@@ -6,38 +6,32 @@ struct VideoThumbnail: View {
     @State private var thumbnail: UIImage?
 
     var body: some View {
-        ZStack {
-            Color.appSage
-            if let thumbnail {
-                Image(uiImage: thumbnail)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                HeroIcon(.video)
-                    .foregroundStyle(Color.appMutedForeground)
+        GeometryReader { geometry in
+            ZStack {
+                Color.appSage
+                if let thumbnail {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    HeroIcon(.video)
+                        .foregroundStyle(Color.appMutedForeground)
+                }
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
         }
-        .frame(width: 76, height: 76)
-        .clipped()
-        .overlay(alignment: .bottomTrailing) {
-            HeroIcon(.play, size: 9)
-                .foregroundStyle(.white)
-                .padding(5)
-                .background(.black.opacity(0.6), in: Circle())
-                .padding(4)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: Radius.xl))
         .accessibilityHidden(true)
         .task(id: url) {
             thumbnail = nil
-            let cache = url.appendingPathExtension("thumbnail.jpg")
+            let cache = url.appendingPathExtension("grid-thumbnail.jpg")
             if let image = UIImage(contentsOfFile: cache.path) {
                 thumbnail = image
                 return
             }
             let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
             generator.appliesPreferredTrackTransform = true
-            generator.maximumSize = CGSize(width: 240, height: 240)
+            generator.maximumSize = CGSize(width: 600, height: 800)
             do {
                 let result = try await generator.image(at: .zero)
                 try Task.checkCancellation()

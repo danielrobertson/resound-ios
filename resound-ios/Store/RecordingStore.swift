@@ -220,6 +220,7 @@ final class RecordingStore {
             try FileManager.default.removeItem(at: fileURL)
         }
         try? FileManager.default.removeItem(at: fileURL.appendingPathExtension("thumbnail.jpg"))
+        try? FileManager.default.removeItem(at: fileURL.appendingPathExtension("grid-thumbnail.jpg"))
         modelContext.delete(recording)
         try modelContext.save()
 

@@ -14,22 +14,24 @@ struct StudioView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     header
+                        .padding(.horizontal, 20)
                         .riseIn()
 
                     if recordings.isEmpty {
                         EmptyStateView()
+                            .padding(.horizontal, 20)
                             .frame(maxWidth: .infinity)
                             .padding(.top, 56)
                     } else {
                         if !allTags.isEmpty {
                             tagFilter
+                                .padding(.horizontal, 20)
                                 .padding(.top, 24)
                         }
-                        recordingList
+                        recordingGrid
                             .padding(.top, allTags.isEmpty ? 32 : 20)
                     }
                 }
-                .padding(.horizontal, 20)
                 .padding(.top, 24)
                 .padding(.bottom, 48)
             }
@@ -112,15 +114,15 @@ struct StudioView: View {
         }
     }
 
-    // MARK: - List
+    // MARK: - Grid
 
-    private var recordingList: some View {
-        LazyVStack(spacing: 14) {
+    private var recordingGrid: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 1), count: 3), spacing: 1) {
             ForEach(Array(filteredRecordings.enumerated()), id: \.element.id) { index, recording in
                 NavigationLink(value: recording) {
                     RecordingCard(recording: recording)
                 }
-                .buttonStyle(AppPressStyle())
+                .buttonStyle(.plain)
                 .riseIn(delay: 0.08 + 0.08 * Double(min(index, 8)))
             }
         }

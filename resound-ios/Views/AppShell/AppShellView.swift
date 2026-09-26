@@ -25,13 +25,11 @@ struct AppShellView: View {
         }
     }
 
-    @State private var selectedTab: Tab = .review
+    @State private var selectedTab: Tab = .library
     @State private var isCreatePresented = false
-    @State private var isAudioRecordPresented = false
     @State private var isVideoCaptureRequested = false
     @State private var isFileImporterPresented = false
     @State private var isPhotosPickerPresented = false
-    @State private var isTextPresented = false
 
     var body: some View {
         Group {
@@ -47,14 +45,8 @@ struct AppShellView: View {
         }
         .background(Color.appBackground)
         .confirmationDialog("Add to Resound", isPresented: $isCreatePresented, titleVisibility: .visible) {
-            Button { isAudioRecordPresented = true } label: {
-                Label("Record audio", image: HeroIconName.microphone.rawValue)
-            }
             Button { isVideoCaptureRequested = true } label: {
                 Label("Record video", image: HeroIconName.video.rawValue)
-            }
-            Button { isTextPresented = true } label: {
-                Label("Write a note", image: HeroIconName.write.rawValue)
             }
             Button { isFileImporterPresented = true } label: {
                 Label("Import from Files", image: HeroIconName.folder.rawValue)
@@ -63,8 +55,6 @@ struct AppShellView: View {
                 Label("Import from Photos", image: HeroIconName.photo.rawValue)
             }
         }
-        .fullScreenCover(isPresented: $isAudioRecordPresented) { RecordView() }
-        .sheet(isPresented: $isTextPresented) { LessonTextView() }
         .mediaImport(
             isVideoCaptureRequested: $isVideoCaptureRequested,
             isFileImporterPresented: $isFileImporterPresented,
@@ -73,7 +63,7 @@ struct AppShellView: View {
         .onAppear {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-autoRecord") {
-                isAudioRecordPresented = true
+                isVideoCaptureRequested = true
             }
             #endif
         }
@@ -112,7 +102,7 @@ private struct AppFooter: View {
             }
             .buttonStyle(FooterPressStyle())
             .accessibilityLabel("Add to Resound")
-            .accessibilityHint("Records audio or video, imports media, or writes a note")
+            .accessibilityHint("Record or import a video")
         }
         .frame(maxWidth: 520)
         .padding(.horizontal, 16)
@@ -166,7 +156,7 @@ private struct ReviewPrototypeView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("From your last lesson")
                             .font(.body(16, .semibold, relativeTo: .headline))
-                        ReviewRow(title: "Keep the shoulder quiet", source: "Warm-up · 0:42", icon: .audio)
+                        ReviewRow(title: "Keep the shoulder quiet", source: "Warm-up · 0:42", icon: .video)
                         ReviewRow(title: "Try the phrase without pedal", source: "Nocturne in E-flat · 12:08", icon: .video)
                     }
                 }
@@ -188,7 +178,7 @@ private struct ReviewFocusCard: View {
                     .tracking(1.4)
                     .foregroundStyle(Color.appPrimary)
                 Spacer()
-                HeroIcon(.audio, size: 19).foregroundStyle(Color.appPrimary)
+                HeroIcon(.video, size: 19).foregroundStyle(Color.appPrimary)
             }
             Text("Let the note settle before you move on.")
                 .font(.display(25, .semibold, relativeTo: .title2))
@@ -253,7 +243,7 @@ private struct FindPrototypeView: View {
                         .font(.display(36, .semibold, relativeTo: .largeTitle))
                     HStack(spacing: 10) {
                         HeroIcon(.tag, size: 19).foregroundStyle(Color.appMutedForeground)
-                        Text("Search lessons, notes, and clips")
+                        Text("Search videos")
                             .font(.body(16, relativeTo: .body))
                             .foregroundStyle(Color.appMutedForeground)
                         Spacer()

@@ -8,7 +8,7 @@ struct SettingsView: View {
     @Environment(AuthService.self) private var auth
     @AppStorage(ThemePreference.storageKey) private var theme: ThemePreference = .system
 
-    @Query private var recordings: [Recording]
+    @Query(filter: #Predicate<Recording> { $0.kindRaw == "video" }) private var recordings: [Recording]
     @State private var isRetrying = false
 
     var body: some View {

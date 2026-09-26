@@ -16,11 +16,10 @@ struct RecordingSnapshot: Sendable {
     let updatedAt: Date
     let fileName: String
     let tags: [String]
-    let notes: String
 
     init(_ recording: Recording) {
         id = recording.id
-        kind = recording.kind.rawValue
+        kind = recording.kindRaw
         title = recording.title
         contentType = recording.contentType
         size = recording.size
@@ -29,7 +28,6 @@ struct RecordingSnapshot: Sendable {
         updatedAt = recording.updatedAt
         fileName = recording.fileName
         tags = recording.tags
-        notes = recording.notes
     }
 }
 
@@ -83,7 +81,7 @@ struct SyncService: Sendable {
         return path
     }
 
-    /// Writes the metadata document, creating or overwriting it wholesale.
+    /// Writes the metadata document, merging fields to preserve legacy metadata.
     func pushMetadata(_ snapshot: RecordingSnapshot, storagePath: String?, uid: String) async throws {
         var data: [String: Any] = [
             "id": snapshot.id.uuidString,
@@ -95,10 +93,8 @@ struct SyncService: Sendable {
             "updatedAt": Timestamp(date: snapshot.updatedAt),
             "fileName": snapshot.fileName,
             "tags": snapshot.tags,
-            "notes": snapshot.notes,
         ]
-        // Absent rather than null for non-audiovisual files, so queries can
-        // use `where duration exists` instead of filtering nulls out.
+        // Duration is omitted when it could not be read from the video.
         if let duration = snapshot.duration {
             data["duration"] = duration
         }
@@ -106,7 +102,7 @@ struct SyncService: Sendable {
             data["storagePath"] = storagePath
         }
 
-        try await Self.document(uid: uid, id: snapshot.id).setData(data)
+        try await Self.document(uid: uid, id: snapshot.id).setData(data, merge: true)
     }
 
     /// Removes the blob and the document. A blob that's already gone is not

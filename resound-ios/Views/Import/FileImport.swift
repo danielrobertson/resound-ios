@@ -13,12 +13,6 @@ struct PickedMedia: Transferable {
         FileRepresentation(importedContentType: .movie) { received in
             PickedMedia(url: try copyToOwnedTemp(received.file))
         }
-        FileRepresentation(importedContentType: .audio) { received in
-            PickedMedia(url: try copyToOwnedTemp(received.file))
-        }
-        FileRepresentation(importedContentType: .image) { received in
-            PickedMedia(url: try copyToOwnedTemp(received.file))
-        }
     }
 
     private static func copyToOwnedTemp(_ file: URL) throws -> URL {
@@ -75,7 +69,7 @@ private struct MediaImport: ViewModifier {
             }
             .fileImporter(
                 isPresented: $isFileImporterPresented,
-                allowedContentTypes: [.audio, .movie, .image, .pdf]
+                allowedContentTypes: [.movie, .video]
             ) { result in
                 switch result {
                 case .success(let url):
@@ -87,7 +81,7 @@ private struct MediaImport: ViewModifier {
             .photosPicker(
                 isPresented: $isPhotosPickerPresented,
                 selection: $photoItem,
-                matching: .any(of: [.images, .videos])
+                matching: .videos
             )
             .onChange(of: photoItem) { _, item in
                 guard let item else { return }
@@ -101,10 +95,10 @@ private struct MediaImport: ViewModifier {
                 }
             }
             .animation(.settle, value: isImporting)
-            .alert("Couldn’t add media", isPresented: isErrorPresented) {
+            .alert("Couldn’t add video", isPresented: isErrorPresented) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text(errorMessage ?? "That file couldn't be added to your studio.")
+                Text(errorMessage ?? "That video couldn't be added to your library.")
             }
     }
 
@@ -142,7 +136,7 @@ private struct MediaImport: ViewModifier {
         do {
             try await store.importFile(at: url)
         } catch {
-            errorMessage = "That file couldn't be added to your studio."
+            errorMessage = "That video couldn't be added to your library."
         }
     }
 
@@ -160,7 +154,7 @@ private struct MediaImport: ViewModifier {
             }
             try await store.importFile(at: media.url)
         } catch {
-            errorMessage = "That item couldn't be added to your studio."
+            errorMessage = "That video couldn't be added to your library."
         }
     }
 }

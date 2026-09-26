@@ -6,7 +6,7 @@ struct EmptyStateView: View {
             Text("Keep a moment from your lesson.")
                 .font(.system(.title3, weight: .regular))
                 .tracking(-0.4)
-            Text("Capture it as it happens, or record a reflection afterward.")
+            Text("Tap + to record a video or import one from your library.")
                 .font(.body)
                 .frame(maxWidth: 290)
         }

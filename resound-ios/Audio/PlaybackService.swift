@@ -1,9 +1,7 @@
 import AVFoundation
 import Observation
 
-/// Wraps a single `AVPlayer` for audio and imported-video playback. The
-/// player is exposed so `VideoPlayer(player:)` can render video directly;
-/// audio UIs drive the transport through the published properties.
+/// Owns the video player and reports loading and playback failures.
 @MainActor
 @Observable
 final class PlaybackService {
@@ -72,23 +70,8 @@ final class PlaybackService {
             try AudioSessionConfig.activateForPlayback()
             player.play()
         } catch {
-            errorMessage = "Audio output is unavailable. Try playing again."
+            errorMessage = "Video playback is unavailable. Try playing again."
         }
-    }
-
-    func togglePlay() {
-        if player.rate > 0 || player.timeControlStatus == .waitingToPlayAtSpecifiedRate {
-            player.pause()
-        } else {
-            play()
-        }
-    }
-
-    func seek(to time: TimeInterval) {
-        let clamped = max(0, duration > 0 ? min(time, duration) : time)
-        let target = CMTime(seconds: clamped, preferredTimescale: 600)
-        player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero)
-        currentTime = clamped
     }
 
     /// Pauses playback and tears down all observers. Call before letting

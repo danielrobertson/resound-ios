@@ -2,22 +2,9 @@ import Foundation
 import SwiftData
 import UniformTypeIdentifiers
 
-/// The broad category of a recording, mirroring the web app's MIME-prefix rule
-/// (`audio/*` → audio, `video/*` → video, anything else → file).
-enum RecordingKind: String, Codable, CaseIterable {
-    case audio
+/// New recordings are videos. Legacy kindRaw values remain stored but are hidden.
+enum RecordingKind: String, Codable {
     case video
-    case file
-
-    init(contentType: UTType) {
-        if contentType.conforms(to: .audio) {
-            self = .audio
-        } else if contentType.conforms(to: .movie) || contentType.conforms(to: .video) {
-            self = .video
-        } else {
-            self = .file
-        }
-    }
 }
 
 /// Where a recording stands with the backend.
@@ -46,11 +33,11 @@ final class Recording {
     @Attribute(.unique) var id: UUID
     var kindRaw: String
     var title: String
-    /// UTType identifier, e.g. `"com.apple.m4a-audio"`.
+    /// Video UTType identifier.
     var contentType: String
     /// Size in bytes of the media file on disk.
     var size: Int64
-    /// Media duration in seconds; nil for non-audiovisual files.
+    /// Video duration in seconds, when available.
     var duration: TimeInterval?
     var createdAt: Date
     /// Last local mutation, pushed as the document's `updatedAt` so the
@@ -66,16 +53,12 @@ final class Recording {
     var storagePath: String?
     /// User-assigned tags, e.g. "Scales", "Jazz". Order is user-defined.
     var tags: [String] = []
-    /// Free-form lesson notes; empty when the user hasn't written any.
+    /// Retained only to preserve previously saved data. Not exposed or synced.
     var notes: String = ""
 
-    var isPlainText: Bool {
-        kind == .file && UTType(contentType)?.conforms(to: .plainText) == true
-    }
-
-    var kind: RecordingKind {
-        get { RecordingKind(rawValue: kindRaw) ?? .file }
-        set { kindRaw = newValue.rawValue }
+    var kind: RecordingKind? {
+        get { RecordingKind(rawValue: kindRaw) }
+        set { kindRaw = newValue?.rawValue ?? kindRaw }
     }
 
     var syncState: SyncState {
@@ -95,8 +78,7 @@ final class Recording {
         fileName: String,
         syncState: SyncState = .local,
         storagePath: String? = nil,
-        tags: [String] = [],
-        notes: String = ""
+        tags: [String] = []
     ) {
         self.id = id
         self.kindRaw = kind.rawValue
@@ -110,6 +92,5 @@ final class Recording {
         self.syncStateRaw = syncState.rawValue
         self.storagePath = storagePath
         self.tags = tags
-        self.notes = notes
     }
 }

@@ -5,26 +5,14 @@ import UniformTypeIdentifiers
 struct RecordingCard: View {
     @Environment(RecordingStore.self) private var store
     let recording: Recording
-    @State private var textTitle: String?
 
     var body: some View {
         Group {
             HStack(spacing: 14) {
-                if recording.kind == .video {
-                    VideoThumbnail(url: store.url(for: recording))
-                } else {
-                    HeroIcon(recording.kind.icon, size: 19)
-                        .foregroundStyle(Color.appForeground.opacity(0.7))
-                        .frame(width: 64, height: 64)
-                        .background(
-                            RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
-                                .fill(Color.appMuted)
-                        )
-
-                }
+                VideoThumbnail(url: store.url(for: recording))
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(textTitle ?? recording.title)
+                    Text(recording.title)
                         .font(.system(.subheadline, weight: .medium))
                         .foregroundStyle(Color.appForeground)
                         .lineLimit(1)
@@ -44,12 +32,6 @@ struct RecordingCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 12)
-        }
-        .task(id: recording.updatedAt) {
-            guard recording.isPlainText else { return }
-            if let text = try? String(contentsOf: store.url(for: recording), encoding: .utf8) {
-                textTitle = RecordingStore.textTitle(text)
-            }
         }
     }
 
@@ -75,20 +57,8 @@ struct RecordingCard: View {
     }
 }
 
-extension RecordingKind {
-    /// Heroicon for each recording kind.
-    var icon: HeroIconName {
-        switch self {
-        case .audio: .audio
-        case .video: .video
-        case .file: .document
-        }
-    }
-}
-
 extension Recording {
-    /// "Audio · 412 KB · Aug 3" — mirrors the web card's meta line.
     var metaLine: String {
-        "\(UTType(contentType)?.conforms(to: .plainText) == true ? "Text" : kind.rawValue.capitalized) · \(Format.size(size)) · \(Format.shortDate(createdAt))"
+        "Video · \(Format.size(size)) · \(Format.shortDate(createdAt))"
     }
 }

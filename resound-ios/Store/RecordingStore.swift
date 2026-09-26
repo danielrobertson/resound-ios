@@ -12,6 +12,12 @@ import UniformTypeIdentifiers
 @MainActor
 @Observable
 final class RecordingStore {
+    enum ImportError: LocalizedError {
+        case videoRequired
+
+        var errorDescription: String? { "Choose a video to add to your library." }
+    }
+
     let directory: URL
 
     @ObservationIgnored
@@ -23,8 +29,8 @@ final class RecordingStore {
     @ObservationIgnored
     private let sync: SyncService?
 
-    /// Rows with a push in flight, so a burst of edits (typing in the notes
-    /// field, adding three tags) doesn't start overlapping uploads for one
+    /// Rows with a push in flight, so a burst of tag edits
+    /// doesn't start overlapping uploads for one
     /// recording. The trailing edit is picked up by the retry pass.
     @ObservationIgnored
     private var inFlight: Set<UUID> = []
@@ -66,6 +72,9 @@ final class RecordingStore {
         contentType: UTType,
         duration: TimeInterval?
     ) throws -> Recording {
+        guard contentType.conforms(to: .movie) || contentType.conforms(to: .video) else {
+            throw ImportError.videoRequired
+        }
         let id = UUID()
         let ext = contentType.preferredFilenameExtension ?? sourceURL.pathExtension
         let fileName = ext.isEmpty ? id.uuidString : "\(id.uuidString).\(ext)"
@@ -108,11 +117,13 @@ final class RecordingStore {
         let contentType = (try? url.resourceValues(forKeys: [.contentTypeKey]))?.contentType
             ?? UTType(filenameExtension: url.pathExtension)
             ?? .data
-        let kind = RecordingKind(contentType: contentType)
+        guard contentType.conforms(to: .movie) || contentType.conforms(to: .video) else {
+            throw ImportError.videoRequired
+        }
         let title = Self.importTitle(from: url.deletingPathExtension().lastPathComponent)
 
         var duration: TimeInterval?
-        if kind == .audio || kind == .video {
+        do {
             let asset = AVURLAsset(url: url)
             if let time = try? await asset.load(.duration), time.isNumeric {
                 duration = time.seconds
@@ -121,7 +132,7 @@ final class RecordingStore {
 
         return try create(
             copying: url,
-            kind: kind,
+            kind: .video,
             title: title,
             contentType: contentType,
             duration: duration
@@ -142,23 +153,6 @@ final class RecordingStore {
             return "Import — \(Format.shortDate(date))"
         }
         return trimmed
-    }
-
-    static func textTitle(_ text: String) -> String {
-        let words = text.split(whereSeparator: { $0.isWhitespace }).prefix(7).joined(separator: " ")
-        return words.isEmpty ? "Empty note" : String(words.prefix(80))
-    }
-
-    func setText(_ text: String, for recording: Recording) throws {
-        guard recording.isPlainText else { return }
-        try text.write(to: url(for: recording), atomically: true, encoding: .utf8)
-        recording.title = Self.textTitle(text)
-        recording.size = Int64(text.utf8.count)
-        recording.storagePath = nil
-        recording.updatedAt = .now
-        recording.syncState = .local
-        try modelContext.save()
-        schedulePush(recording)
     }
 
     /// Renames a recording. Whitespace is trimmed; empty titles are ignored.
@@ -184,13 +178,6 @@ final class RecordingStore {
     func removeTag(_ tag: String, from recording: Recording) {
         guard recording.tags.contains(tag) else { return }
         recording.tags.removeAll { $0 == tag }
-        commit(recording)
-    }
-
-    /// Replaces the notes text. Unlike titles, notes may be cleared to empty.
-    func setNotes(_ notes: String, for recording: Recording) {
-        guard recording.notes != notes else { return }
-        recording.notes = notes
         commit(recording)
     }
 
@@ -250,7 +237,7 @@ final class RecordingStore {
     func syncPending() async {
         guard sync != nil else { return }
         let descriptor = FetchDescriptor<Recording>(
-            predicate: #Predicate { $0.syncStateRaw != "synced" },
+            predicate: #Predicate { $0.kindRaw == "video" && $0.syncStateRaw != "synced" },
             sortBy: [SortDescriptor(\.createdAt)]
         )
         guard let pending = try? modelContext.fetch(descriptor) else { return }
@@ -269,7 +256,7 @@ final class RecordingStore {
     /// Failures are recorded on the row and otherwise swallowed: backup is a
     /// background courtesy, and the recording is safe on disk either way.
     private func push(_ recording: Recording) async {
-        guard let sync, let auth else { return }
+        guard recording.kind == .video, let sync, let auth else { return }
 
         let id = recording.id
         guard !inFlight.contains(id) else { return }

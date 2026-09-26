@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Lesson media library, presented inside the app shell's Library tab.
 struct StudioView: View {
-    @Query(sort: \Recording.createdAt, order: .reverse)
+    @Query(filter: #Predicate<Recording> { $0.kindRaw == "video" }, sort: \Recording.createdAt, order: .reverse)
     private var recordings: [Recording]
 
     @State private var selectedTag: String?
@@ -34,11 +34,7 @@ struct StudioView: View {
             }
             .background { StudioBackground() }
             .navigationDestination(for: Recording.self) { recording in
-                if recording.isPlainText {
-                    LessonTextView(recording: recording)
-                } else {
-                    RecordingDetailView(recording: recording)
-                }
+                RecordingDetailView(recording: recording)
             }
         }
     }

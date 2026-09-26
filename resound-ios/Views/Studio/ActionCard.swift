@@ -74,8 +74,8 @@ struct ActionCard: View {
 #Preview("Action cards") {
     VStack(spacing: 20) {
         ActionCard(
-            icon: .microphone,
-            title: "Record audio",
+            icon: .video,
+            title: "Record video",
             subtitle: "Capture the sound of today's lesson.",
             cta: "Start recording",
             accent: true
@@ -83,7 +83,7 @@ struct ActionCard: View {
         ActionCard(
             icon: .upload,
             title: "Upload a file",
-            subtitle: "Video, audio, image, or PDF.",
+            subtitle: "Choose a video from your library.",
             cta: "Choose a file"
         ) {}
     }

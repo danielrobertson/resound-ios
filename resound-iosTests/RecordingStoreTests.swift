@@ -31,27 +31,27 @@ struct RecordingStoreTests {
 
     @Test func createCopiesFileAndSetsSizeAndRelativeFileName() throws {
         let (store, context, directory) = try makeStore()
-        let source = try makeFixture(named: "source-\(UUID().uuidString).pdf", bytes: 2048)
+        let source = try makeFixture(named: "source-\(UUID().uuidString).mp4", bytes: 2048)
         defer { try? FileManager.default.removeItem(at: source) }
 
         let recording = try store.create(
             copying: source,
-            kind: .file,
+            kind: .video,
             title: "Handout",
-            contentType: .pdf,
+            contentType: .mpeg4Movie,
             duration: nil
         )
 
         #expect(recording.size == 2048)
         #expect(recording.title == "Handout")
-        #expect(recording.contentType == UTType.pdf.identifier)
+        #expect(recording.contentType == UTType.mpeg4Movie.identifier)
         // No auth/sync injected, so the row stays local and nothing is pushed.
         #expect(recording.syncState == .local)
         #expect(recording.storagePath == nil)
 
         // fileName is relative — "<uuid>.<ext>", no path separators.
         #expect(!recording.fileName.contains("/"))
-        #expect(recording.fileName == "\(recording.id.uuidString).pdf")
+        #expect(recording.fileName == "\(recording.id.uuidString).mp4")
 
         // The copy landed in the store's directory, source untouched.
         let copied = directory.appending(path: recording.fileName)
@@ -62,14 +62,14 @@ struct RecordingStoreTests {
 
     // MARK: - importFile
 
-    @Test func importAudioFileDerivesKindAndTitle() async throws {
+    @Test func importVideoFileDerivesKindAndTitle() async throws {
         let (store, _, _) = try makeStore()
-        let source = try makeFixture(named: "Lesson Take 3.m4a")
+        let source = try makeFixture(named: "Lesson Take 3.mp4")
         defer { try? FileManager.default.removeItem(at: source) }
 
         let recording = try await store.importFile(at: source)
 
-        #expect(recording.kind == .audio)
+        #expect(recording.kind == .video)
         #expect(recording.title == "Lesson Take 3")
         #expect(recording.size == 2048)
         // Dummy bytes are not a decodable asset — no duration assertion
@@ -79,22 +79,9 @@ struct RecordingStoreTests {
         }
     }
 
-    @Test func importPDFDerivesFileKindAndNilDuration() async throws {
-        let (store, _, _) = try makeStore()
-        let source = try makeFixture(named: "Sheet Music.pdf")
-        defer { try? FileManager.default.removeItem(at: source) }
-
-        let recording = try await store.importFile(at: source)
-
-        #expect(recording.kind == .file)
-        #expect(recording.title == "Sheet Music")
-        #expect(recording.contentType == UTType.pdf.identifier)
-        #expect(recording.duration == nil)
-    }
-
     @Test func importCameraFilenameGetsDatedTitle() async throws {
         let (store, _, _) = try makeStore()
-        let source = try makeFixture(named: "IMG_1234.jpg")
+        let source = try makeFixture(named: "IMG_1234.mp4")
         defer { try? FileManager.default.removeItem(at: source) }
 
         let recording = try await store.importFile(at: source)
@@ -127,9 +114,9 @@ struct RecordingStoreTests {
 
     @Test func renameTrimsWhitespace() throws {
         let (store, _, _) = try makeStore()
-        let source = try makeFixture(named: "rename-\(UUID().uuidString).pdf")
+        let source = try makeFixture(named: "rename-\(UUID().uuidString).mp4")
         defer { try? FileManager.default.removeItem(at: source) }
-        let recording = try store.create(copying: source, kind: .file, title: "Old", contentType: .pdf, duration: nil)
+        let recording = try store.create(copying: source, kind: .video, title: "Old", contentType: .mpeg4Movie, duration: nil)
 
         store.rename(recording, to: "  New title  ")
 
@@ -138,9 +125,9 @@ struct RecordingStoreTests {
 
     @Test func renameIgnoresEmptyTitles() throws {
         let (store, _, _) = try makeStore()
-        let source = try makeFixture(named: "rename-empty-\(UUID().uuidString).pdf")
+        let source = try makeFixture(named: "rename-empty-\(UUID().uuidString).mp4")
         defer { try? FileManager.default.removeItem(at: source) }
-        let recording = try store.create(copying: source, kind: .file, title: "Keep me", contentType: .pdf, duration: nil)
+        let recording = try store.create(copying: source, kind: .video, title: "Keep me", contentType: .mpeg4Movie, duration: nil)
 
         store.rename(recording, to: "   \n ")
 
@@ -151,9 +138,9 @@ struct RecordingStoreTests {
 
     @Test func addTagTrimsAndAppends() throws {
         let (store, _, _) = try makeStore()
-        let source = try makeFixture(named: "tags-\(UUID().uuidString).pdf")
+        let source = try makeFixture(named: "tags-\(UUID().uuidString).mp4")
         defer { try? FileManager.default.removeItem(at: source) }
-        let recording = try store.create(copying: source, kind: .file, title: "T", contentType: .pdf, duration: nil)
+        let recording = try store.create(copying: source, kind: .video, title: "T", contentType: .mpeg4Movie, duration: nil)
 
         store.addTag("  Scales ", to: recording)
         store.addTag("Jazz", to: recording)
@@ -163,9 +150,9 @@ struct RecordingStoreTests {
 
     @Test func addTagIgnoresEmptyAndCaseInsensitiveDuplicates() throws {
         let (store, _, _) = try makeStore()
-        let source = try makeFixture(named: "tags-dup-\(UUID().uuidString).pdf")
+        let source = try makeFixture(named: "tags-dup-\(UUID().uuidString).mp4")
         defer { try? FileManager.default.removeItem(at: source) }
-        let recording = try store.create(copying: source, kind: .file, title: "T", contentType: .pdf, duration: nil)
+        let recording = try store.create(copying: source, kind: .video, title: "T", contentType: .mpeg4Movie, duration: nil)
 
         store.addTag("Scales", to: recording)
         store.addTag("scales", to: recording)
@@ -176,9 +163,9 @@ struct RecordingStoreTests {
 
     @Test func removeTagRemovesExactMatchOnly() throws {
         let (store, _, _) = try makeStore()
-        let source = try makeFixture(named: "tags-rm-\(UUID().uuidString).pdf")
+        let source = try makeFixture(named: "tags-rm-\(UUID().uuidString).mp4")
         defer { try? FileManager.default.removeItem(at: source) }
-        let recording = try store.create(copying: source, kind: .file, title: "T", contentType: .pdf, duration: nil)
+        let recording = try store.create(copying: source, kind: .video, title: "T", contentType: .mpeg4Movie, duration: nil)
         store.addTag("Scales", to: recording)
         store.addTag("Jazz", to: recording)
 
@@ -189,35 +176,19 @@ struct RecordingStoreTests {
     }
 
     @Test func allTagsDeduplicatesAcrossRecordingsPreservingOrder() {
-        let a = Recording(kind: .audio, title: "A", contentType: "t", size: 1, fileName: "a.m4a", tags: ["Scales", "Jazz"])
-        let b = Recording(kind: .audio, title: "B", contentType: "t", size: 1, fileName: "b.m4a", tags: ["jazz", "Improv"])
+        let a = Recording(kind: .video, title: "A", contentType: "t", size: 1, fileName: "a.mp4", tags: ["Scales", "Jazz"])
+        let b = Recording(kind: .video, title: "B", contentType: "t", size: 1, fileName: "b.mp4", tags: ["jazz", "Improv"])
 
         #expect(RecordingStore.allTags(in: [a, b]) == ["Scales", "Jazz", "Improv"])
-    }
-
-    // MARK: - notes
-
-    @Test func setNotesPersistsAndAllowsClearing() throws {
-        let (store, _, _) = try makeStore()
-        let source = try makeFixture(named: "notes-\(UUID().uuidString).pdf")
-        defer { try? FileManager.default.removeItem(at: source) }
-        let recording = try store.create(copying: source, kind: .file, title: "T", contentType: .pdf, duration: nil)
-        #expect(recording.notes.isEmpty)
-
-        store.setNotes("Work on the bridge section", for: recording)
-        #expect(recording.notes == "Work on the bridge section")
-
-        store.setNotes("", for: recording)
-        #expect(recording.notes.isEmpty)
     }
 
     // MARK: - delete
 
     @Test func deleteRemovesFileAndRow() throws {
         let (store, context, _) = try makeStore()
-        let source = try makeFixture(named: "delete-\(UUID().uuidString).pdf")
+        let source = try makeFixture(named: "delete-\(UUID().uuidString).mp4")
         defer { try? FileManager.default.removeItem(at: source) }
-        let recording = try store.create(copying: source, kind: .file, title: "Doomed", contentType: .pdf, duration: nil)
+        let recording = try store.create(copying: source, kind: .video, title: "Doomed", contentType: .mpeg4Movie, duration: nil)
         let fileURL = store.url(for: recording)
         #expect(FileManager.default.fileExists(atPath: fileURL.path))
 
@@ -229,9 +200,9 @@ struct RecordingStoreTests {
 
     @Test func deleteToleratesAlreadyMissingFile() throws {
         let (store, context, _) = try makeStore()
-        let source = try makeFixture(named: "delete-missing-\(UUID().uuidString).pdf")
+        let source = try makeFixture(named: "delete-missing-\(UUID().uuidString).mp4")
         defer { try? FileManager.default.removeItem(at: source) }
-        let recording = try store.create(copying: source, kind: .file, title: "Ghost", contentType: .pdf, duration: nil)
+        let recording = try store.create(copying: source, kind: .video, title: "Ghost", contentType: .mpeg4Movie, duration: nil)
         try FileManager.default.removeItem(at: store.url(for: recording))
 
         try store.delete(recording)
@@ -244,14 +215,14 @@ struct RecordingStoreTests {
     @Test func urlForRecordingIsDirectoryPlusFileName() throws {
         let (store, _, directory) = try makeStore()
         let recording = Recording(
-            kind: .audio,
+            kind: .video,
             title: "Somewhere",
-            contentType: UTType.mpeg4Audio.identifier,
+            contentType: UTType.mpeg4Movie.identifier,
             size: 1,
-            fileName: "abc.m4a"
+            fileName: "abc.mp4"
         )
 
-        let expected = directory.appending(path: "abc.m4a", directoryHint: .notDirectory)
+        let expected = directory.appending(path: "abc.mp4", directoryHint: .notDirectory)
         #expect(store.url(for: recording).standardizedFileURL.path == expected.standardizedFileURL.path)
     }
 }

@@ -90,12 +90,12 @@ private struct DesignSystemGallery: View {
         VStack(alignment: .leading, spacing: 14) {
             DoubleBezel {
                 VStack(alignment: .leading, spacing: 10) {
-                    HeroIcon(.microphone, size: 20)
+                    HeroIcon(.video, size: 20)
                         .foregroundStyle(Color.appPrimary)
-                    Text("Record audio")
+                    Text("Record video")
                         .font(.display(19, .semibold, relativeTo: .title3))
                         .foregroundStyle(Color.appForeground)
-                    Text("Capture a lesson moment with the built-in microphone.")
+                    Text("Capture a lesson moment with the camera.")
                         .font(.body(14, .regular, relativeTo: .subheadline))
                         .foregroundStyle(Color.appMutedForeground)
                 }
@@ -108,14 +108,14 @@ private struct DesignSystemGallery: View {
                         .fill(Color.appMuted)
                         .frame(width: 40, height: 40)
                         .overlay(
-                            HeroIcon(.audio, size: 17)
+                            HeroIcon(.video, size: 17)
                                 .foregroundStyle(Color.appForeground.opacity(0.7))
                         )
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Recording — Aug 3")
                             .font(.body(15, .semibold, relativeTo: .body))
                             .foregroundStyle(Color.appForeground)
-                        Text("Audio · 412 KB · Aug 3")
+                        Text("Video · 412 KB · Aug 3")
                             .font(.body(12, .regular, relativeTo: .caption))
                             .foregroundStyle(Color.appMutedForeground)
                     }

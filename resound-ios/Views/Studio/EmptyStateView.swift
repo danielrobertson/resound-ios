@@ -2,45 +2,62 @@ import SwiftUI
 
 struct EmptyStateView: View {
     var body: some View {
-        VStack(spacing: 8) {
-            Text("Keep a moment from your lesson.")
-                .font(.system(.title3, weight: .regular))
-                .tracking(-0.4)
+        VStack(spacing: 0) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    .fill(Color.appPeach)
+                    .frame(width: 112, height: 132)
+                    .rotationEffect(.degrees(-12))
+                    .offset(x: -24, y: 4)
+                RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    .fill(Color.appSage)
+                    .frame(width: 112, height: 132)
+                    .rotationEffect(.degrees(11))
+                    .offset(x: 24, y: -2)
+                WaveMark()
+                    .stroke(Color.appForeground, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .frame(width: 52, height: 52)
+                    .frame(width: 112, height: 132)
+                    .appSurface(radius: 32)
+            }
+            .frame(height: 164)
+            .accessibilityHidden(true)
+
+            Text("Keep a moment\nfrom your lesson.")
+                .font(.display(28, .semibold, relativeTo: .title2))
+                .tracking(-0.6)
+                .foregroundStyle(Color.appForeground)
+                .padding(.top, 28)
             Text("Tap + to record a video or import one from your library.")
-                .font(.body)
-                .frame(maxWidth: 290)
+                .font(.body(15, relativeTo: .body))
+                .foregroundStyle(Color.appMutedForeground)
+                .frame(maxWidth: 270)
+                .padding(.top, 12)
         }
-        .foregroundStyle(.primary)
         .multilineTextAlignment(.center)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 32)
     }
 }
 
-/// Broad, static color fields keep the library calm and respect Reduce Motion.
+/// A neutral canvas with faint edge color; stronger accents belong to actions and feature cards.
 struct StudioBackground: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                Color(uiColor: .systemGroupedBackground)
-                Ellipse()
-                    .fill(Color(red: 0.67, green: 0.84, blue: 0.93))
-                    .frame(width: geometry.size.width * 1.3, height: geometry.size.height * 0.5)
-                    .position(x: geometry.size.width * 0.15, y: geometry.size.height * 0.55)
-                Ellipse()
-                    .fill(Color(red: 0.91, green: 0.73, blue: 0.62))
-                    .frame(width: geometry.size.width, height: geometry.size.height * 0.4)
-                    .position(x: geometry.size.width * 0.9, y: geometry.size.height * 0.8)
-                Ellipse()
-                    .fill(Color(red: 0.78, green: 0.79, blue: 0.93))
-                    .frame(width: geometry.size.width, height: geometry.size.height * 0.3)
-                    .position(x: geometry.size.width * 0.4, y: geometry.size.height)
+                Color.appBackground
+                if !reduceTransparency {
+                    RadialGradient(colors: [Color.appSky.opacity(0.16), .clear],
+                                   center: .topTrailing, startRadius: 0,
+                                   endRadius: geometry.size.width * 1.05)
+                    RadialGradient(colors: [Color.appSage.opacity(0.14), .clear],
+                                   center: .bottomTrailing, startRadius: 0,
+                                   endRadius: geometry.size.width * 1.15)
+                }
             }
-            .blur(radius: 65)
-            .opacity(colorScheme == .dark ? 0.18 : 0.55)
         }
-        .background(Color(uiColor: .systemGroupedBackground))
         .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)

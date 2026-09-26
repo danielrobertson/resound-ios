@@ -28,7 +28,7 @@ struct RecordingDetailView: View {
 
                     VStack(alignment: .leading, spacing: 10) {
                         TextField("Title", text: $titleDraft, axis: .vertical)
-                            .font(.system(.title, weight: .medium))
+                            .font(.display(28, .semibold, relativeTo: .title))
                             .tracking(-0.6)
                             .focused($isTitleFocused)
                             .submitLabel(.done)
@@ -50,9 +50,12 @@ struct RecordingDetailView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .frame(minHeight: 44)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .appSurface(radius: Radius.xl2)
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(AppPressStyle())
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
@@ -95,7 +98,7 @@ struct RecordingDetailView: View {
                     }
                     .padding(20)
                 }
-                .background { StudioBackground() }
+                // Let the system sheet supply its adaptive iOS 26 material.
                 .navigationTitle("Tags")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

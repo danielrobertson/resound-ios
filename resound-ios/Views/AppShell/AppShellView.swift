@@ -44,6 +44,8 @@ struct AppShellView: View {
             AppFooter(selectedTab: $selectedTab) { isCreatePresented = true }
         }
         .background(Color.appBackground)
+        .foregroundStyle(Color.appForeground)
+        .tint(Color.primary)
         .confirmationDialog("Add to Resound", isPresented: $isCreatePresented, titleVisibility: .visible) {
             Button { isVideoCaptureRequested = true } label: {
                 Label("Record video", image: HeroIconName.video.rawValue)
@@ -73,42 +75,59 @@ struct AppShellView: View {
 private struct AppFooter: View {
     @Binding var selectedTab: AppShellView.Tab
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
+    @Namespace private var selection
     @ScaledMetric(relativeTo: .caption2) private var itemHeight = 54.0
     let create: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 0) {
-                ForEach(AppShellView.Tab.allCases, id: \.self) { tab in
-                    tabButton(tab)
-                }
-            }
-            .padding(5)
-            .background(.regularMaterial, in: Capsule())
-            .overlay {
-                Capsule().strokeBorder(Color.appBorder.opacity(0.65), lineWidth: 0.5)
-            }
-            .shadow(color: .black.opacity(0.09), radius: 16, y: 6)
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 12) {
+                navigationBar
+                    .tint(Color.primary)
 
-            Button(action: create) {
-                HeroIcon(.plus, size: 27)
-                    .foregroundStyle(Color.appPrimaryForeground)
-                    .frame(width: 64, height: 64)
-                    .background(Circle().fill(Color.appPrimary))
-                    .overlay {
-                        Circle().strokeBorder(.white.opacity(0.18), lineWidth: 0.5)
-                    }
-                    .shadow(color: Color.appPrimary.opacity(0.22), radius: 12, y: 5)
+                Button(action: create) {
+                    HeroIcon(.plus, size: 27)
+                        .foregroundStyle(Color.appPrimaryForeground)
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.glassProminent)
+                .buttonBorderShape(.circle)
+                .controlSize(.large)
+                .tint(Color.appPrimary)
+                .accessibilityLabel("Add to Resound")
+                .accessibilityHint("Record or import a video")
             }
-            .buttonStyle(FooterPressStyle())
-            .accessibilityLabel("Add to Resound")
-            .accessibilityHint("Record or import a video")
         }
         .frame(maxWidth: 520)
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var navigationBar: some View {
+        if reduceTransparency {
+            tabItems
+                .background(Color.appCard, in: Capsule())
+                .overlay { Capsule().strokeBorder(Color.appBorder, lineWidth: 1) }
+        } else {
+            // iOS 26 supplies the refraction, edge highlights, and touch response.
+            // Keep the material untinted so content can show through the navigation.
+            tabItems
+                .glassEffect(.regular.interactive(), in: Capsule())
+        }
+    }
+
+    private var tabItems: some View {
+        HStack(spacing: 0) {
+            ForEach(AppShellView.Tab.allCases, id: \.self) { tab in
+                tabButton(tab)
+            }
+        }
+        .padding(5)
     }
 
     private func tabButton(_ tab: AppShellView.Tab) -> some View {
@@ -122,21 +141,19 @@ private struct AppFooter: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
             }
-            .foregroundStyle(selectedTab == tab ? Color.appForeground : Color.appMutedForeground)
+            .foregroundStyle(selectedTab == tab ? Color.primary : Color.secondary)
             .frame(maxWidth: .infinity, minHeight: itemHeight)
+            .background {
+                if selectedTab == tab {
+                    Capsule()
+                        .fill(colorScheme == .dark ? Color.white.opacity(0.16) : Color.black.opacity(0.07))
+                        .matchedGeometryEffect(id: "selectedTab", in: selection)
+                }
+            }
             .contentShape(Capsule())
         }
-        .buttonStyle(FooterPressStyle())
+        .buttonStyle(AppPressStyle())
         .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
-    }
-}
-
-private struct FooterPressStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.96 : 1)
-            .opacity(configuration.isPressed ? 0.72 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 
@@ -176,9 +193,9 @@ private struct ReviewFocusCard: View {
                 Text("START HERE")
                     .font(.body(10, .semibold, relativeTo: .caption2))
                     .tracking(1.4)
-                    .foregroundStyle(Color.appPrimary)
+                    .foregroundStyle(Color.appBrandTint)
                 Spacer()
-                HeroIcon(.video, size: 19).foregroundStyle(Color.appPrimary)
+                HeroIcon(.video, size: 19).foregroundStyle(Color.appBrandTint)
             }
             Text("Let the note settle before you move on.")
                 .font(.display(25, .semibold, relativeTo: .title2))
@@ -195,18 +212,18 @@ private struct ReviewFocusCard: View {
                     .padding(.vertical, 10)
                     .background(Capsule().fill(Color.appPrimary))
                 }
-                .buttonStyle(FooterPressStyle())
+                .buttonStyle(AppPressStyle())
                 Text("Scales · 0:18")
                     .font(.body(13, relativeTo: .caption))
                     .foregroundStyle(Color.appMutedForeground)
             }
         }
         .padding(22)
-        .background(
+        .background {
             RoundedRectangle(cornerRadius: Radius.xl4, style: .continuous)
-                .fill(Color.appCard)
-                .shadow(color: .black.opacity(0.08), radius: 18, y: 7)
-        )
+                .fill(LinearGradient(colors: [Color.appSage, Color.appPeach],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+        }
     }
 }
 
@@ -228,12 +245,22 @@ private struct ReviewRow: View {
             Spacer()
             HeroIcon(.chevronRight, size: 16).foregroundStyle(Color.appMutedForeground)
         }
-        .padding(.vertical, 4)
+        .padding(16)
+        .appSurface()
     }
 }
 
 private struct FindPrototypeView: View {
     private let themes = ["Tone", "Technique", "Rhythm", "Repertoire"]
+
+    private func themeColor(_ theme: String) -> Color {
+        switch theme {
+        case "Tone": .appSage
+        case "Technique": .appSky
+        case "Rhythm": .appPeach
+        default: .appMuted
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -250,7 +277,7 @@ private struct FindPrototypeView: View {
                     }
                     .padding(.horizontal, 14)
                     .frame(height: 50)
-                    .background(RoundedRectangle(cornerRadius: Radius.xl2, style: .continuous).fill(Color.appCard))
+                    .appSurface(radius: Radius.xl2)
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Browse by theme")
                             .font(.body(16, .semibold, relativeTo: .headline))
@@ -263,7 +290,7 @@ private struct FindPrototypeView: View {
                                 }
                                 .foregroundStyle(Color.appForeground)
                                 .padding(15)
-                                .background(RoundedRectangle(cornerRadius: Radius.xl2, style: .continuous).fill(Color.appCard))
+                                .background(themeColor(theme), in: RoundedRectangle(cornerRadius: Radius.xl2, style: .continuous))
                             }
                         }
                     }
@@ -304,7 +331,7 @@ private struct YouPrototypeView: View {
                             .foregroundStyle(Color.appMutedForeground)
                     }
                     .padding(20)
-                    .background(RoundedRectangle(cornerRadius: Radius.xl3, style: .continuous).fill(Color.appCard))
+                    .appSurface(radius: Radius.xl3)
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Your space")
                             .font(.body(16, .semibold, relativeTo: .headline))

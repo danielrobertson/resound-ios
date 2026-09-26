@@ -71,15 +71,16 @@ struct TagChip: View {
                 Button(action: onRemove) {
                     HeroIcon(.close, size: 9)
                         .foregroundStyle(Color.appMutedForeground)
-                        .frame(width: 16, height: 16)
+                        .frame(width: 44, height: 44)
                         .contentShape(Circle())
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel("Remove tag \(tag)")
             }
         }
         .padding(.leading, 12)
-        .padding(.trailing, onRemove == nil ? 12 : 8)
-        .padding(.vertical, 6)
+        .padding(.trailing, onRemove == nil ? 12 : 0)
+        .padding(.vertical, onRemove == nil ? 6 : 0)
         .background(Capsule().fill(Color.appMuted))
         .overlay(Capsule().strokeBorder(Color.appBorder.opacity(0.7)))
     }

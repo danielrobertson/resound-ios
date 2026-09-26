@@ -3,7 +3,6 @@ import SwiftUI
 
 /// Appearance preference, backup status, plus the brand's About block.
 struct SettingsView: View {
-    @Environment(\.dismiss) private var dismiss
     @Environment(RecordingStore.self) private var store
     @Environment(AuthService.self) private var auth
     @AppStorage(ThemePreference.storageKey) private var theme: ThemePreference = .system
@@ -12,57 +11,50 @@ struct SettingsView: View {
     @State private var isRetrying = false
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Appearance") {
-                    Picker("Appearance", selection: $theme) {
-                        ForEach(ThemePreference.allCases) { preference in
-                            Text(preference.label).tag(preference)
-                        }
+        Form {
+            Section("Appearance") {
+                Picker("Appearance", selection: $theme) {
+                    ForEach(ThemePreference.allCases) { preference in
+                        Text(preference.label).tag(preference)
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
                 }
-
-                backupSection
-
-                Section("About") {
-                    VStack(spacing: 10) {
-                        WaveMark()
-                            .stroke(
-                                Color.appPrimary,
-                                style: StrokeStyle(lineWidth: 2.4, lineCap: .round)
-                            )
-                            .frame(width: 36, height: 36)
-                            .accessibilityHidden(true)
-
-                        Text("resound")
-                            .font(.display(26, .semibold, relativeTo: .title2))
-                            .foregroundStyle(Color.appForeground)
-
-                        Text("Lessons that continue to resonate.")
-                            .font(.body(13, relativeTo: .footnote))
-                            .foregroundStyle(Color.appMutedForeground)
-
-                        Text("Version \(appVersion)")
-                            .font(.body(12, relativeTo: .caption))
-                            .foregroundStyle(Color.appMutedForeground.opacity(0.7))
-                            .padding(.top, 2)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        dismiss()
-                    }
+
+            backupSection
+
+            Section("About") {
+                VStack(spacing: 10) {
+                    WaveMark()
+                        .stroke(
+                            Color.appBrandTint,
+                            style: StrokeStyle(lineWidth: 2.4, lineCap: .round)
+                        )
+                        .frame(width: 36, height: 36)
+                        .accessibilityHidden(true)
+
+                    Text("resound")
+                        .font(.display(26, .semibold, relativeTo: .title2))
+                        .foregroundStyle(Color.appForeground)
+
+                    Text("Lessons that continue to resonate.")
+                        .font(.body(13, relativeTo: .footnote))
+                        .foregroundStyle(Color.appMutedForeground)
+
+                    Text("Version \(appVersion)")
+                        .font(.body(12, relativeTo: .caption))
+                        .foregroundStyle(Color.appMutedForeground.opacity(0.7))
+                        .padding(.top, 2)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background { StudioBackground() }
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Backup
@@ -140,7 +132,9 @@ struct SettingsView: View {
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     // No sync service — the preview shows the local-only state.
-    SettingsView()
+    NavigationStack {
+        SettingsView()
+    }
         .environment(RecordingStore(modelContext: container.mainContext))
         .environment(AuthService())
         .modelContainer(container)

@@ -13,9 +13,9 @@ struct RecordingCard: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(recording.title)
-                        .font(.system(.subheadline, weight: .medium))
+                        .font(.body(16, .semibold, relativeTo: .headline))
                         .foregroundStyle(Color.appForeground)
-                        .lineLimit(1)
+                        .lineLimit(2)
                     Text(Format.shortDate(recording.createdAt))
                         .font(.caption)
                         .foregroundStyle(Color.appMutedForeground)
@@ -31,7 +31,8 @@ struct RecordingCard: View {
                 SyncBadge(state: recording.syncState)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 12)
+            .padding(14)
+            .appSurface(radius: 28)
         }
     }
 
@@ -46,7 +47,7 @@ struct RecordingCard: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(Capsule().fill(Color.appMuted))
-                    .overlay(Capsule().strokeBorder(Color.appBorder.opacity(0.7)))
+
             }
             if recording.tags.count > 3 {
                 Text("+\(recording.tags.count - 3)")

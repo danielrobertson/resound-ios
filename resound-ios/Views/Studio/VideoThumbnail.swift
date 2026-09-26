@@ -7,7 +7,7 @@ struct VideoThumbnail: View {
 
     var body: some View {
         ZStack {
-            Color.appMuted
+            Color.appSage
             if let thumbnail {
                 Image(uiImage: thumbnail)
                     .resizable()
@@ -17,7 +17,7 @@ struct VideoThumbnail: View {
                     .foregroundStyle(Color.appMutedForeground)
             }
         }
-        .frame(width: 64, height: 64)
+        .frame(width: 76, height: 76)
         .clipped()
         .overlay(alignment: .bottomTrailing) {
             HeroIcon(.play, size: 9)

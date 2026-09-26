@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Semantic color tokens mirroring the web design system (`styles.css` OKLCH
-/// variables, converted to sRGB). Each resolves an asset-catalog colorset with
+/// Resound’s soft neutral palette. Each resolves an asset-catalog colorset with
 /// light/dark appearance variants, so they compose with `preferredColorScheme`.
 ///
 /// `appPrimary` and `appSecondary` are not declared here: their colorsets are
@@ -16,5 +15,9 @@ extension Color {
     static let appMuted = Color("Muted")
     static let appMutedForeground = Color("MutedForeground")
     static let appBorder = Color("Border")
+    static let appBrandTint = Color("BrandTint")
+    static let appSage = Color("Sage")
+    static let appPeach = Color("Peach")
+    static let appSky = Color("Sky")
     static let appDestructive = Color("Destructive")
 }

@@ -34,6 +34,7 @@ struct PickedMedia: Transferable {
 /// copy runs and an alert on failure.
 private struct MediaImport: ViewModifier {
     @Environment(RecordingStore.self) private var store
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Binding var isVideoCaptureRequested: Bool
     @State private var isCameraPresented = false
@@ -94,7 +95,7 @@ private struct MediaImport: ViewModifier {
                         .transition(.opacity)
                 }
             }
-            .animation(.settle, value: isImporting)
+            .animation(reduceMotion ? nil : .settle, value: isImporting)
             .alert("Couldn’t add video", isPresented: isErrorPresented) {
                 Button("OK", role: .cancel) {}
             } message: {

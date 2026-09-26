@@ -7,6 +7,7 @@ struct StudioView: View {
     private var recordings: [Recording]
 
     @State private var selectedTag: String?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         NavigationStack {
@@ -18,7 +19,7 @@ struct StudioView: View {
                     if recordings.isEmpty {
                         EmptyStateView()
                             .frame(maxWidth: .infinity)
-                            .padding(.top, 140)
+                            .padding(.top, 56)
                     } else {
                         if !allTags.isEmpty {
                             tagFilter
@@ -33,6 +34,11 @@ struct StudioView: View {
                 .padding(.bottom, 48)
             }
             .background { StudioBackground() }
+            .onChange(of: allTags) { _, tags in
+                if let selectedTag, !tags.contains(where: { $0.caseInsensitiveCompare(selectedTag) == .orderedSame }) {
+                    self.selectedTag = nil
+                }
+            }
             .navigationDestination(for: Recording.self) { recording in
                 RecordingDetailView(recording: recording)
             }
@@ -42,10 +48,26 @@ struct StudioView: View {
     // MARK: - Header
 
     private var header: some View {
-        Text("Library")
-            .font(.system(.largeTitle, weight: .medium))
-            .tracking(-0.8)
-            .foregroundStyle(.primary)
+        HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Library")
+                    .font(.display(36, .semibold, relativeTo: .largeTitle))
+                    .tracking(-0.8)
+                    .foregroundStyle(Color.appForeground)
+                if !recordings.isEmpty {
+                    Text("\(recordings.count) \(recordings.count == 1 ? "video" : "videos")")
+                        .font(.body(14, relativeTo: .subheadline))
+                        .foregroundStyle(Color.appMutedForeground)
+                }
+            }
+            Spacer()
+            WaveMark()
+                .stroke(Color.appForeground, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .frame(width: 23, height: 23)
+                .frame(width: 46, height: 46)
+                .background(Color.appCard.opacity(0.75), in: Circle())
+                .accessibilityHidden(true)
+        }
     }
 
     // MARK: - Tag filter
@@ -69,7 +91,7 @@ struct StudioView: View {
                 ForEach(allTags, id: \.self) { tag in
                     let isSelected = selectedTag?.caseInsensitiveCompare(tag) == .orderedSame
                     Button {
-                        withAnimation(.settle) {
+                        withAnimation(reduceMotion ? nil : .settle) {
                             selectedTag = isSelected ? nil : tag
                         }
                     } label: {
@@ -79,11 +101,12 @@ struct StudioView: View {
                                 isSelected ? Color.appPrimaryForeground : Color.appForeground.opacity(0.8)
                             )
                             .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .frame(minHeight: 44)
                             .background(Capsule().fill(isSelected ? Color.appPrimary : Color.appMuted))
                             .overlay(Capsule().strokeBorder(Color.appBorder.opacity(isSelected ? 0 : 0.7)))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(AppPressStyle())
+                    .accessibilityAddTraits(isSelected ? .isSelected : [])
                 }
             }
         }
@@ -97,7 +120,7 @@ struct StudioView: View {
                 NavigationLink(value: recording) {
                     RecordingCard(recording: recording)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(AppPressStyle())
                 .riseIn(delay: 0.08 + 0.08 * Double(min(index, 8)))
             }
         }

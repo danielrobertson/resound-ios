@@ -1,8 +1,6 @@
 import SwiftUI
 
-/// The web studio's `ActionCard`: a double-bezel tray holding an icon
-/// square, a title, a one-line description, and a capsule CTA whose
-/// trailing arrow lives in its own small circle (the "button-in-button").
+/// A soft card with a clear capsule action.
 struct ActionCard: View {
     var icon: HeroIconName
     var title: String
@@ -35,11 +33,11 @@ struct ActionCard: View {
 
     private var iconSquare: some View {
         HeroIcon(icon, size: 20)
-            .foregroundStyle(accent ? Color.appPrimary : Color.appForeground.opacity(0.7))
+            .foregroundStyle(accent ? Color.appBrandTint : Color.appForeground.opacity(0.7))
             .frame(width: 44, height: 44)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(accent ? Color.appPrimary.opacity(0.1) : Color.appMuted)
+                    .fill(accent ? Color.appSage : Color.appSky)
             )
     }
 
@@ -62,11 +60,11 @@ struct ActionCard: View {
             }
             .padding(.leading, 16)
             .padding(.trailing, 6)
-            .padding(.vertical, 6)
+            .padding(.vertical, 8)
             .foregroundStyle(accent ? Color.appPrimaryForeground : Color.appForeground.opacity(0.8))
             .background(Capsule().fill(accent ? Color.appPrimary : Color.appMuted))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(AppPressStyle())
         .accessibilityLabel(cta)
     }
 }

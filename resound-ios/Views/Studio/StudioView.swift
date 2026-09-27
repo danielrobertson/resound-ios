@@ -6,43 +6,52 @@ struct StudioView: View {
     @Query(filter: #Predicate<Recording> { $0.kindRaw == "video" }, sort: \Recording.createdAt, order: .reverse)
     private var recordings: [Recording]
 
+    @Namespace private var videoTransition
     @State private var selectedTag: String?
+    @State private var selectedRecording: Recording?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    header
-                        .padding(.horizontal, 20)
-                        .riseIn()
-
-                    if recordings.isEmpty {
-                        EmptyStateView()
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        header
                             .padding(.horizontal, 20)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 56)
-                    } else {
-                        if !allTags.isEmpty {
-                            tagFilter
+                            .riseIn()
+
+                        if recordings.isEmpty {
+                            EmptyStateView()
                                 .padding(.horizontal, 20)
-                                .padding(.top, 24)
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 56)
+                        } else {
+                            if !allTags.isEmpty {
+                                tagFilter
+                                    .padding(.horizontal, 20)
+                                    .padding(.top, 24)
+                            }
+                            recordingGrid
+                                .padding(.top, allTags.isEmpty ? 32 : 20)
                         }
-                        recordingGrid
-                            .padding(.top, allTags.isEmpty ? 32 : 20)
+                    }
+                    .padding(.top, 24)
+                    .padding(.bottom, 48)
+                }
+                .background { StudioBackground() }
+                .onChange(of: allTags) { _, tags in
+                    if let selectedTag, !tags.contains(where: { $0.caseInsensitiveCompare(selectedTag) == .orderedSame }) {
+                        self.selectedTag = nil
                     }
                 }
-                .padding(.top, 24)
-                .padding(.bottom, 48)
-            }
-            .background { StudioBackground() }
-            .onChange(of: allTags) { _, tags in
-                if let selectedTag, !tags.contains(where: { $0.caseInsensitiveCompare(selectedTag) == .orderedSame }) {
-                    self.selectedTag = nil
+                .fullScreenCover(item: $selectedRecording) { recording in
+                    RecordingViewer(
+                        recordings: filteredRecordings,
+                        selectedRecording: recording,
+                        transitionNamespace: videoTransition,
+                        onSelectionChanged: { id in proxy.scrollTo(id, anchor: .center) }
+                    )
                 }
-            }
-            .navigationDestination(for: Recording.self) { recording in
-                RecordingDetailView(recording: recording)
             }
         }
     }
@@ -119,9 +128,11 @@ struct StudioView: View {
     private var recordingGrid: some View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 1), count: 3), spacing: 1) {
             ForEach(Array(filteredRecordings.enumerated()), id: \.element.id) { index, recording in
-                NavigationLink(value: recording) {
+                Button { selectedRecording = recording } label: {
                     RecordingCard(recording: recording)
+                        .matchedTransitionSource(id: recording.id, in: videoTransition)
                 }
+                .id(recording.id)
                 .buttonStyle(.plain)
                 .riseIn(delay: 0.08 + 0.08 * Double(min(index, 8)))
             }

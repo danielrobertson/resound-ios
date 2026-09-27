@@ -74,6 +74,16 @@ final class PlaybackService {
         }
     }
 
+    func pause() {
+        player.pause()
+        isPlaying = false
+    }
+
+    func seek(to seconds: TimeInterval) {
+        currentTime = seconds
+        player.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+    }
+
     /// Pauses playback and tears down all observers. Call before letting
     /// the service go out of scope; `deinit` covers anything missed.
     func stop() {
